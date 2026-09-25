@@ -33,6 +33,11 @@ func _run() -> void:
 	await _frames(5)
 	if not Art.ready_done:
 		await Art.baked
+	if scenario == "start":
+		await _frames(20)
+		await _shot(dir, "start_card")
+		get_tree().quit()
+		return
 	main.begin()
 	main.restart(room)
 	await _frames(40)
@@ -80,6 +85,25 @@ func _run() -> void:
 			print("PERF %s: %.1f fps avg, physics avg %.2f ms worst %.2f ms, process avg %.2f ms, enemies %d, projectiles %d, particles %d" % [
 				room, frames / 6.0, phys / frames, worst, proc / frames, world.enemies.size(), world.projectiles.count(), world.fx.particle_count()])
 			await _shot(dir, room + "_perf")
+		"death":
+			world.player.hurt(9999, world.player.position + Vector2(10, 0))
+			await _frames(90)
+			await _shot(dir, room + "_death")
+		"talk":
+			var npc = null
+			for st in world.stations:
+				if st.kind == World.StationKind.NPC:
+					npc = st
+			world.player.place(npc.pos + Vector2(0, 40), npc.z)
+			var f := InputFrame.new()
+			f.use = true
+			f.aim = npc.pos
+			world.player.scripted = f
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+			world.player.scripted = null
+			await _frames(20)
+			await _shot(dir, room + "_talk")
 		"menu":
 			main._open_menu()
 			await _frames(10)

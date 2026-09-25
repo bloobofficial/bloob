@@ -114,6 +114,7 @@ func _run() -> void:
 	await test_enemy_attacks()
 	await test_stations()
 	test_world_graph()
+	await test_ui()
 	print("== %d passed, %d failed ==" % [passed, failed])
 	get_tree().quit(0 if failed == 0 else 1)
 
@@ -621,3 +622,47 @@ func test_world_graph() -> void:
 	check("world: combat and safe areas", ["combat", "elite", "hub", "shop", "social", "rest", "explore"].all(func(k): return kinds.has(k)))
 	var dmg := Content.weapons.map(func(w): return w.combo_damage())
 	check("weapons: five, one full combo deals about the same (6-7.5)", Content.weapons.size() == 5 and dmg.all(func(x): return x >= 6.0 and x <= 7.5), str(dmg))
+
+
+func test_ui() -> void:
+	if world:
+		world.queue_free()
+		world = null
+	var main: Node = load("res://main.tscn").instantiate()
+	add_child(main)
+	await get_tree().process_frame
+	check("ui: main scene boots with the start card", main.start_card.visible and not main.world.running)
+	main.begin()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	check("ui: Wake up starts the run", main.world.running and not main.start_card.visible)
+	check("ui: HUD shows the area and HP", main.hud._room_name.text == "Sanctum" and main.hud._hp_text.text.begins_with("100"))
+	main._open_menu()
+	var ok: bool = get_tree().paused and main.menu.visible
+	for i in PauseMenu.TABS.size():
+		main.menu.show_tab(i)
+		await get_tree().process_frame
+		ok = ok and main.menu._page.get_child_count() > 0
+	check("ui: the pause menu pauses the game and renders all six tabs", ok)
+	main._close_menu()
+	check("ui: closing the menu resumes", not get_tree().paused)
+	main.shrine.open()
+	await get_tree().process_frame
+	check("ui: the Shrine lists jobs and techs", main.shrine._content.get_child_count() >= 4)
+	main.shrine.close()
+	main.board.open()
+	await get_tree().process_frame
+	check("ui: the notice board shows the tally", main.board._content.text.contains("Defeated"))
+	main.board.close()
+	main.dev.run("give all 50")
+	main.dev.run("spawn charger 2")
+	check("ui: the dev console gives resources and spawns", GameState.res[0] == 50 and main.world.enemies.size() == 2)
+	main.restart("hollow")
+	await get_tree().physics_frame
+	check("ui: room keys / restart start a new run in that room", main.world.room.id == "hollow" and GameState.res[0] == 0)
+	var hit: bool = main.world.player.hurt(9999, Vector2.ZERO)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check("ui: death shows the Overrun card", main.death_card.visible, "hit=%s dead=%s god=%s inv=%d started=%s" % [hit, main.world.player.dead, main.world.player.god, main.world.player.invuln, main.started])
+	main.queue_free()
+	await get_tree().process_frame

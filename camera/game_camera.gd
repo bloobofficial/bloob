@@ -23,6 +23,7 @@ func snap() -> void:
 	cam_z = world.player.z
 	_apply()
 	reset_smoothing()
+	reset_physics_interpolation()
 
 
 func _physics_process(delta: float) -> void:

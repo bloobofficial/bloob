@@ -43,6 +43,7 @@ func _init(title: String = "", subtitle: String = "", width: float = 640.0) -> v
 	body.add_child(sub_label)
 	visible = false
 	resized.connect(_fit)
+	visibility_changed.connect(func(): if visible: _fit.call_deferred())
 
 
 func _fit() -> void:

@@ -92,6 +92,7 @@ func _ready() -> void:
 	player.setup(self)
 	projectiles.world = self
 	fx.world = self
+	($Doors as DoorGlow).world = self
 
 
 # ---------------- runs & rooms ----------------
