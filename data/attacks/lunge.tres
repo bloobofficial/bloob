@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_f1h7k"]
+
+[resource]
+script = ExtResource("1_f1h7k")
+id = "lunge"
+name = "Lunge"
+range = 270.0
+windup = 42
+active = 16
+recover = 50
+cooldown = Vector2i(110, 170)
+damage = 22.0
+speed = 8.5
+heavy = true

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://resources/theme_data.gd" id="1_72iiv"]
+
+[resource]
+script = ExtResource("1_72iiv")
+id = "overlook"
+floor = Color(0.29, 0.27, 0.2, 1)
+plateau = Color(0.36, 0.33, 0.25, 1)
+high = Color(0.43, 0.39, 0.3, 1)
+path = Color(0.44, 0.36, 0.24, 1)
+foliage = Color(0.17, 0.12, 0.08, 1)
+tree = Color(1, 0.8, 0.55, 1)
+fog = Color(0.08, 0.06, 0.075, 1)

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Resource" path="res://data/modes/skirmish.tres" id="1_es7ko"]
+[ext_resource type="Script" path="res://resources/encounter_data.gd" id="2_b5lln"]
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="3_5krc2"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="4_c8pie"]
+[ext_resource type="Resource" path="res://data/themes/base.tres" id="5_iuuvg"]
+
+[sub_resource type="Resource" id="Resource_fk0ql"]
+script = ExtResource("2_b5lln")
+preset = ExtResource("1_es7ko")
+budget = 8
+start_alive = 1
+squads = 1
+tier = 2
+mix = PackedFloat32Array(25, 15, 25, 10, 20, 5)
+
+[resource]
+script = ExtResource("4_c8pie")
+id = "ridge"
+name = "The Ridge"
+blurb = "High ground over the abyss. Squads hunt here."
+map_pos = Vector2i(2, 1)
+theme = ExtResource("5_iuuvg")
+layout = PackedStringArray("  222222222222222222                          ", " 22222222222222222222222                      ", " 2222222##222222222222222                     ", " 222%222##2222222222222222                    ", " 2222222222222222222222fed11111111111111      ", " 2222222222222222222222fed111111111111111     ", " 222222222222222%222222fed1111111&1111111     ", " 2222222222222222222222 111111111111111111    ", "  22222222222222222222  111111##11111111111   ", "   2222222222222222222  111111##11111111111   ", "    ...............     111111111111111&111   ", "   .................    11111111111111111111  ", "  ....*..............   cccccc11111111111111  ", " .......................bbbbbb11111111111111  ", "DD......................aaaaaa..........1111  ", "DD...........................................  ", "DD.....##.........................*.........  ", " ..........................................   ", "  ....................*..................     ", "     ................CCCC...............      ", "                     CCCC                     ")
+doors = {
+&"C": ["mire", "A"],
+&"D": ["wayshrine", "B"]
+}
+encounter = SubResource("Resource_fk0ql")
+stands = PackedStringArray()

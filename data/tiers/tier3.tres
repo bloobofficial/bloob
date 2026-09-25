@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TierData" format=3]
+
+[ext_resource type="Script" path="res://resources/tier_data.gd" id="1_ddeeu"]
+
+[resource]
+script = ExtResource("1_ddeeu")
+name = "Grim"
+hp_mul = 1.22
+dmg_mul = 1.1
+atk_rate = 1.12
+speed_mul = 1.04
+squads = true
+elite_chance = 0.16
+two_affix_chance = 0.4
+max_alive = 4

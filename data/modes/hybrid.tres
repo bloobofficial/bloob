@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_qq3xv"]
+
+[resource]
+script = ExtResource("1_qq3xv")
+id = "hybrid"
+label = "Hybrid"
+blurb = "A horde with smart squads mixed in."
+horde_start = 80
+horde_max = 600
+horde_ramp_per_sec = 8.0
+spawn_burst = 12
+spawn_every = 14
+mix = PackedFloat32Array(30, 30, 18, 12, 9, 0)
+squads_start = 1
+squads_max = 4
+squad_every = 600
+brain = 1

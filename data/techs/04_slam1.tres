@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_mgk0b"]
+
+[resource]
+script = ExtResource("1_mgk0b")
+id = "slam1"
+name = "Heavier Landing"
+desc = "Dive slam radius +25%"
+cost = PackedInt32Array(45, 6, 0, 0)
+req = PackedStringArray()

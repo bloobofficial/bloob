@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_tivoc"]
+
+[resource]
+script = ExtResource("1_tivoc")
+id = "calm"
+label = "Calm"
+blurb = "No encounter."
+mix = PackedFloat32Array(0, 0, 0, 0, 0, 0)

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_podgp"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_pgrq1"]
+[ext_resource type="Resource" path="res://data/themes/forge.tres" id="3_hajp0"]
+
+[sub_resource type="Resource" id="Resource_rfhcv"]
+script = ExtResource("1_podgp")
+name = "Smith Ember"
+tint = Color(1, 0.72, 0.5, 1)
+lines = PackedStringArray("Walk up to a rack and press T. Buy once, swap back for free.", "The spear keeps trouble at arm\'s length. Its arm, not yours.", "Hammer\'s slow. Hammer\'s honest. Hammer ends conversations.", "Twin Fangs want you close and moving. Don\'t stand still with them.")
+
+[resource]
+script = ExtResource("2_pgrq1")
+id = "forge"
+name = "The Forge"
+kind = "shop"
+blurb = "Weapon racks. Buy a weapon once, swap to it here any time."
+map_pos = Vector2i(0, 3)
+theme = ExtResource("3_hajp0")
+layout = PackedStringArray("##################################", "##################################", "##################################", "###............................###", "###............................###", "###...W....W....W....W....W.....##", "####...........................###", "###...,,,,,,,,,,,,,,,,,,,,,.....##", "###.............,,.............###", "######...........,.............###", "######......P...,,..............##", "####............,,...........,,,,B", "####............,,,,,,,,,,,,,,,,,B", "####............,,,,,,,,,,@,,,,,,B", "####.........................,,,,B", "###.##..........................##", "######.........................###", "####...........................###", "###............................###", "###.............................##", "####............................##", "####...........................###", "####tttttt.t..ttt...tt.t....tt.###", "###ttttttttttttttttttttttttttttt##")
+doors = {
+&"B": ["sanctum", "D"]
+}
+stands = PackedStringArray("paws", "sword", "spear", "hammer", "daggers")
+npcs = Array[ExtResource("1_podgp")]([SubResource("Resource_rfhcv")])

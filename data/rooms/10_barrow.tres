@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Resource" path="res://data/modes/skirmish.tres" id="1_kxqy2"]
+[ext_resource type="Script" path="res://resources/encounter_data.gd" id="2_c2bjf"]
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="3_ayxw0"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="4_2un8d"]
+[ext_resource type="Resource" path="res://data/themes/barrow.tres" id="5_j5tul"]
+
+[sub_resource type="Resource" id="Resource_4jvk7"]
+script = ExtResource("2_c2bjf")
+preset = ExtResource("1_kxqy2")
+start_alive = 1
+ramp_per_sec = 0.1
+squads = 1
+tier = 3
+mix = PackedFloat32Array(30, 0, 10, 10, 20, 30)
+
+[resource]
+script = ExtResource("4_2un8d")
+id = "barrow"
+name = "The Barrow"
+kind = "elite"
+blurb = "An old burial dais. Brutes and champions. Something heavy rests on top."
+theme = ExtResource("5_j5tul")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTT.TTT.TTT..TTTTTT.TT..T.T.T.T..T.TTTT..TTTT", "TTTT.......................................TTT", "TTTT.*..................................*..TTT", "TTT............##111111111111##............TTT", "TTTT...........##111111111111##.............TT", "TTTT..###......111&111R11111111......###...TTT", "TTT...#........1111111111111111........#...TTT", "TTTT..#........111111111111&111........#....TT", "TTTT..#........##111111111111##........#...TTT", "TTTT...........##111111111111##.............TT", "TTTT.................cccc................,,,,B", "TTTT.................bbbb,,,,,,,,,,,,,,,,,,,,B", "TTT..................aaaa,,,,,,,,,,,,,,,,,,,,B", "TTT...................,,.................,,,,B", "TTTT.........*........,,........*...........TT", "TTTT..................,,....................TT", "TTTT..................,,...................TTT", "TTTT....####..........,,..........####.....TTT", "TTT...................,,....................TT", "TTT...................,,...................TTT", "TTT...................,,...................TTT", "TTTT.*................,,................*..TTT", "TTT...................@,...................TTT", "TTT..................,,,,..................TTT", "TTT..................,,,,..................TTT", "TTT.t.t.t.t..t.tttttt,,,,t.ttttt..t..t.tttt.TT", "TTTTtttttttttttttttttCCCCttttttttttttttttttTTT")
+doors = {
+&"B": ["overlook", "D"],
+&"C": ["thornwood", "A"]
+}
+encounter = SubResource("Resource_4jvk7")
+stands = PackedStringArray()
+reward = "hammer"

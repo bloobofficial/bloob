@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Resource" path="res://data/modes/skirmish.tres" id="1_32fau"]
+[ext_resource type="Script" path="res://resources/encounter_data.gd" id="2_2lrb3"]
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="3_3wpmd"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="4_ofdod"]
+[ext_resource type="Resource" path="res://data/themes/moss.tres" id="5_0irhu"]
+
+[sub_resource type="Resource" id="Resource_3il8a"]
+script = ExtResource("2_2lrb3")
+preset = ExtResource("1_32fau")
+mix = PackedFloat32Array(35, 30, 20, 10, 5, 0)
+
+[resource]
+script = ExtResource("4_ofdod")
+id = "hollow"
+name = "The Hollow"
+blurb = "A mossy clearing with two sinkholes. Something sharp waits for whoever clears it."
+map_pos = Vector2i(1, 2)
+theme = ExtResource("5_0irhu")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTAAAATTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTT...TTTT.TTTTTTT.TTTT,,,,T..TTTTTTTT.TTTTT..TT.TT", "TTTT..............*.....,,,,.....*...............TTT", "TTT...*.............T....,,.......................TT", "TTTT...............TTT...,,...................*...TT", "TTT.......##........t....,,.............##.......TTT", "TTTT......##.............,,.............##.......TTT", "TTTT................##...,,.......................TT", "TTTT................##...,,......................TTT", "TTT......................,,......................TTT", "TTTT.........   .........,,........    ..........TTT", "TTTT.......      ........,R........      ........TTT", "TTTT......        .......,,......        ......,,,,B", "TTTT.......       .......,,,,,,,,        ,,,,,,,,,,B", "TTTT.......       .......,,,,,,,,,        ,,,,,,,,,B", "TTTT.......       .......,,.......       ......,,,,B", "TTT.......... . .........,,........ .. ..........TTT", "TTT......................,,......................TTT", "TTT..*...................,,......................TTT", "TTTT.....................,,...##..................TT", "TTTT.....................,,...##..............*...TT", "TTTT......##.............,,.............##.......TTT", "TTT.......##......*......,,....T..*.....##.......TTT", "TTTT.....................,,...TTT................TTT", "TTT......................@,....t.................TTT", "TTTT.....................,,.......................TT", "TTTT....................,,,,......................TT", "TTT.....................,,,,.....................TTT", "TTT.ttt..t.ttt.ttt..tttt,,,,.ttttt..tt.ttt..ttttt.TT", "TTTTttttttttttttttttttttCCCCttttttttttttttttttttttTT")
+doors = {
+&"A": ["wayshrine", "C"],
+&"B": ["mire", "D"],
+&"C": ["sanctum", "A"]
+}
+encounter = SubResource("Resource_3il8a")
+stands = PackedStringArray()
+reward = "sword"

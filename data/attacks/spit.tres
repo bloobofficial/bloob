@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_omvow"]
+
+[resource]
+script = ExtResource("1_omvow")
+id = "spit"
+name = "Spit"
+kind = 1
+range = 280.0
+windup = 22
+active = 1
+recover = 24
+cooldown = Vector2i(140, 240)
+speed = 4.6
+shots = 1

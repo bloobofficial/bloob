@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_ek2vl"]
+
+[resource]
+script = ExtResource("1_ek2vl")
+id = "skirmish"
+label = "Skirmish"
+blurb = "About four at a time. Each one matters."
+horde_start = 2
+horde_max = 4
+horde_ramp_per_sec = 0.12
+spawn_burst = 1
+spawn_every = 40
+mix = PackedFloat32Array(30, 25, 18, 12, 12, 3)
+squads_start = 1
+squads_max = 1
+squad_every = 900
+brain = 1
+cap_all = true
+contact = false

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_jsyol"]
+[ext_resource type="Resource" path="res://data/attacks/spit.tres" id="2_fw5m5"]
+[ext_resource type="Resource" path="res://data/attacks/spray.tres" id="3_aj0ar"]
+[ext_resource type="Resource" path="res://data/attacks/lash.tres" id="4_wsp5k"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="5_ipuge"]
+
+[resource]
+script = ExtResource("5_ipuge")
+id = "weaver"
+name = "Weaver"
+kind_index = 1
+color = Color(0.78, 0.9, 0.35, 1)
+radius = 7.0
+hp = 12.0
+speed = 1.8
+routes = PackedFloat32Array(3, 1, 1, 0)
+weave_amp = 0.95
+weave_freq = 0.11
+contact_damage = 6.0
+attacks = Array[ExtResource("1_jsyol")]([ExtResource("2_fw5m5"), ExtResource("3_aj0ar"), ExtResource("4_wsp5k")])
+attack_weights = PackedFloat32Array(5, 3, 2)
+loot_extra = 2
+sprite_scale = 0.44

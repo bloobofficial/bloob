@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="1_g7hh8"]
+
+[resource]
+script = ExtResource("1_g7hh8")
+id = 1
+name = "Rally"
+desc = "+40% damage and +20% speed for 5 s, heal 10%."
+cooldown = 600
+mana = 30
+params = {
+&"dmg": 1.4,
+&"heal": 0.1,
+&"speed": 1.2,
+&"ticks": 300.0
+}

@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://resources/swing_data.gd" id="1_7hfh2"]
+[ext_resource type="Script" path="res://resources/weapon_data.gd" id="2_0dp3m"]
+
+[sub_resource type="Resource" id="Resource_2mnnq"]
+script = ExtResource("1_7hfh2")
+name = "Air Swipe"
+windup = 2
+recover = 7
+chain_from = 99
+range = 50.0
+arc = 1.25
+knock = 4.2
+stagger = 16
+lunge = 1.2
+knock_up = 3.2
+has_vis = true
+vis_from = -1.25
+vis_to = 1.2
+vis_lift = 0.4
+
+[sub_resource type="Resource" id="Resource_1kf1e"]
+script = ExtResource("1_7hfh2")
+name = "Swipe"
+has_vis = true
+vis_from = -1.05
+vis_to = 0.95
+vis_lift = 0.3
+
+[sub_resource type="Resource" id="Resource_3uk41"]
+script = ExtResource("1_7hfh2")
+name = "Backswipe"
+recover = 11
+range = 50.0
+arc = 1.1
+knock = 4.6
+stagger = 12
+lunge = 2.6
+has_vis = true
+vis_from = 1.15
+vis_to = -1.0
+vis_lift = 0.3
+
+[sub_resource type="Resource" id="Resource_yv2w3"]
+script = ExtResource("1_7hfh2")
+name = "Slam"
+windup = 8
+active = 4
+recover = 20
+chain_from = 99
+range = 66.0
+arc = 1.75
+damage = 3.5
+knock = 14.0
+stagger = 36
+lunge = 4.2
+freeze_enemy = 6
+freeze_self = 4
+hitstop = 4
+knock_up = 4.2
+brute_knock_mul = 0.35
+breaks_poise = true
+impact = 38.0
+heavy = true
+has_vis = true
+vis_lift = 1.0
+
+[resource]
+script = ExtResource("2_0dp3m")
+id = "paws"
+name = "Goo Paws"
+blurb = "Bloob's own claws. Swipe, Backswipe, Slam."
+combo = Array[ExtResource("1_7hfh2")]([SubResource("Resource_1kf1e"), SubResource("Resource_3uk41"), SubResource("Resource_yv2w3")])
+air = SubResource("Resource_2mnnq")
+cost = PackedInt32Array(0, 0, 0, 0)
+sprite = "weapon.paws"
+traits = "3 hits · balanced · finisher launches"

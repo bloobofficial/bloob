@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://resources/swing_data.gd" id="1_hq2x0"]
+[ext_resource type="Script" path="res://resources/weapon_data.gd" id="2_5biaq"]
+
+[sub_resource type="Resource" id="Resource_23sov"]
+script = ExtResource("1_hq2x0")
+name = "Air Jab"
+recover = 8
+chain_from = 99
+range = 84.0
+arc = 0.35
+damage = 1.6
+knock = 4.0
+stagger = 14
+lunge = 1.0
+knock_up = 2.4
+width = 18.0
+has_vis = true
+vis_thrust = 26.0
+
+[sub_resource type="Resource" id="Resource_wipgh"]
+script = ExtResource("1_hq2x0")
+name = "Jab"
+windup = 4
+recover = 8
+chain_from = 3
+range = 88.0
+arc = 0.3
+damage = 1.3
+knock = 3.0
+lunge = 1.5
+width = 16.0
+has_vis = true
+vis_thrust = 26.0
+
+[sub_resource type="Resource" id="Resource_mkper"]
+script = ExtResource("1_hq2x0")
+name = "Jab"
+windup = 4
+recover = 8
+chain_from = 3
+range = 88.0
+arc = 0.3
+damage = 1.3
+knock = 3.0
+lunge = 1.5
+width = 16.0
+pose = 1
+has_vis = true
+vis_from = 0.05
+vis_to = 0.05
+vis_thrust = 26.0
+
+[sub_resource type="Resource" id="Resource_amhf3"]
+script = ExtResource("1_hq2x0")
+name = "Sweep"
+windup = 5
+active = 4
+range = 80.0
+arc = 1.4
+damage = 1.6
+knock = 5.0
+stagger = 14
+lunge = 1.0
+pose = 0
+has_vis = true
+vis_from = -1.6
+vis_to = 1.5
+vis_lift = 0.1
+
+[sub_resource type="Resource" id="Resource_vdoww"]
+script = ExtResource("1_hq2x0")
+name = "Impaler"
+windup = 9
+active = 4
+recover = 20
+chain_from = 99
+range = 102.0
+arc = 0.28
+damage = 2.6
+knock = 13.0
+stagger = 34
+lunge = 7.5
+freeze_enemy = 5
+freeze_self = 3
+hitstop = 3
+knock_up = 1.0
+brute_knock_mul = 0.35
+breaks_poise = true
+width = 20.0
+heavy = true
+pose = 2
+has_vis = true
+vis_thrust = 36.0
+
+[resource]
+script = ExtResource("2_5biaq")
+id = "spear"
+name = "Bone Spear"
+blurb = "Keeps them at a distance. Jab, jab, sweep, impale."
+combo = Array[ExtResource("1_hq2x0")]([SubResource("Resource_wipgh"), SubResource("Resource_mkper"), SubResource("Resource_amhf3"), SubResource("Resource_vdoww")])
+air = SubResource("Resource_23sov")
+move_mul = 0.96
+swing_move_mul = 0.28
+combo_end_cd = 10
+cost = PackedInt32Array(60, 0, 6, 0)
+sprite = "weapon.spear"
+held = true
+art_scale = 0.78
+grip = 0.3
+rest = 0.25
+fx_rim = Color(1, 0.6, 0.16, 1)
+fx_trail = Color(1, 0.8, 0.5, 1)
+fx_glow = Color(1, 0.75, 0.35, 1)
+fx_heavy_glow = Color(1, 0.65, 0.3, 1)
+traits = "4 hits · longest reach · thrusts"

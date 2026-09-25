@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_fv3vh"]
+[ext_resource type="Resource" path="res://data/attacks/lunge.tres" id="2_pmfru"]
+[ext_resource type="Resource" path="res://data/attacks/quake.tres" id="3_xe24l"]
+[ext_resource type="Resource" path="res://data/attacks/smash.tres" id="4_csoph"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="5_0gfmq"]
+
+[resource]
+script = ExtResource("5_0gfmq")
+id = "brute"
+name = "Brute"
+kind_index = 5
+color = Color(0.95, 0.22, 0.22, 1)
+radius = 19.0
+hp = 36.0
+speed = 0.95
+routes = PackedFloat32Array(1, 0, 0, 0)
+contact_damage = 22.0
+attacks = Array[ExtResource("1_fv3vh")]([ExtResource("2_pmfru"), ExtResource("3_xe24l"), ExtResource("4_csoph")])
+attack_weights = PackedFloat32Array(5, 3, 4)
+loot_ichor = Vector2i(12, 18)
+loot_extra_chance = 1.0
+loot_shard_chance = 0.35
+loot_heal_chance = 0.7
+kill_xp = 30
+sprite_scale = 0.98

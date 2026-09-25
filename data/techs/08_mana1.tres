@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_wxpwo"]
+
+[resource]
+script = ExtResource("1_wxpwo")
+id = "mana1"
+name = "Brimming Goo"
+desc = "+25 max mana"
+cost = PackedInt32Array(40, 0, 6, 0)
+req = PackedStringArray()

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_g3s45"]
+
+[resource]
+script = ExtResource("1_g3s45")
+id = "skills1"
+name = "Quick Rituals"
+desc = "Skills recharge 20% faster"
+cost = PackedInt32Array(80, 0, 10, 1)
+req = PackedStringArray()

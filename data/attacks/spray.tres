@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_8l1k8"]
+
+[resource]
+script = ExtResource("1_8l1k8")
+id = "spray"
+name = "Spray"
+kind = 1
+range = 240.0
+windup = 28
+active = 1
+cooldown = Vector2i(200, 320)
+damage = 7.0
+speed = 4.2
+shots = 3
+spread = 0.32

@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_kxdhf"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_k6uwm"]
+[ext_resource type="Resource" path="res://data/themes/lounge.tres" id="3_tfosu"]
+
+[sub_resource type="Resource" id="Resource_ywjfa"]
+script = ExtResource("1_kxdhf")
+name = "Pip"
+tint = Color(0.6, 0.8, 1, 1)
+lines = PackedStringArray("The board by the trees keeps count of everything you do out there.", "Heard someone left a spear up at the Overlook. Past the Wayshrine, north.", "The Mire\'s got a pair of fangs in it. Nasty little things. The fangs, I mean.")
+
+[sub_resource type="Resource" id="Resource_7pfxa"]
+script = ExtResource("1_kxdhf")
+name = "Old Gloop"
+tint = Color(0.82, 0.62, 1, 1)
+lines = PackedStringArray("When I was your size the Barrow was just a hill with opinions.", "Champions glow. Glowing things hit harder. That\'s science.", "Clear a place once and it stays quiet. Mostly.")
+
+[resource]
+script = ExtResource("2_k6uwm")
+id = "lounge"
+name = "The Lounge"
+kind = "social"
+blurb = "Friends, a pond, and the board that keeps your tally."
+map_pos = Vector2i(2, 3)
+theme = ExtResource("3_tfosu")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTT.TTTTTT.TTTTTTT....T.T..T.T.TTT", "TTT............................TTT", "TTT............................TTT", "TTTT.......L...................TTT", "TTT..................~.~.......TTT", "TTT..................~~~~~~....TTT", "TTT................~~~~~~~~.....TT", "D,,,,..............~~~~~~~~~...TTT", "D,,,,,,,,,,,,,,,....~~~~~~~~...TTT", "D,,,,,,@,,,,,,,,....~~~~~~~....TTT", "D,,,,.........,P.......~~......TTT", "TTTT..........,,...............TTT", "TTT...........,,..........P.....TT", "TTT...........,,,,,,,,,,,,......TT", "TTTT...TTT....,,,,,,,,,,,,.....TTT", "TTTT...TTT..................X...TT", "TTTT...ttt......................TT", "TTTT...........................TTT", "TTT............................TTT", "TTT.ttttt.ttt.t.tt..tttt.tttt.t.TT", "TTTTtttttttttttttttttttttttttttTTT")
+doors = {
+&"D": ["sanctum", "B"]
+}
+stands = PackedStringArray()
+npcs = Array[ExtResource("1_kxdhf")]([SubResource("Resource_ywjfa"), SubResource("Resource_7pfxa")])

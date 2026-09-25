@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://resources/job_data.gd" id="1_v3kv2"]
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="2_1ho4n"]
+[ext_resource type="Resource" path="res://data/skills/quake.tres" id="3_plkhf"]
+[ext_resource type="Resource" path="res://data/skills/rally.tres" id="4_e7pf1"]
+
+[resource]
+script = ExtResource("1_v3kv2")
+id = "brawler"
+name = "Brawler"
+blurb = "Close and heavy. Quake and Rally."
+skills = Array[ExtResource("2_1ho4n")]([ExtResource("3_plkhf"), ExtResource("4_e7pf1")])

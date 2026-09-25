@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_7n85e"]
+
+[resource]
+script = ExtResource("1_7n85e")
+id = "trickster"
+name = "Way of the Trickster"
+desc = "Unlocks the Trickster job"
+cost = PackedInt32Array(60, 0, 12, 0)
+req = PackedStringArray()

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TierData" format=3]
+
+[ext_resource type="Script" path="res://resources/tier_data.gd" id="1_seyy5"]
+
+[resource]
+script = ExtResource("1_seyy5")
+name = "Nightmare"
+hp_mul = 1.6
+dmg_mul = 1.36
+atk_rate = 1.4
+speed_mul = 1.12
+squads = true
+elite_chance = 0.32
+two_affix_chance = 0.7
+max_alive = 4

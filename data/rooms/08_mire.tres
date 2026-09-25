@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Resource" path="res://data/modes/skirmish.tres" id="1_axl1l"]
+[ext_resource type="Script" path="res://resources/encounter_data.gd" id="2_yyldd"]
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="3_8yjfc"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="4_el4qt"]
+[ext_resource type="Resource" path="res://data/themes/mire.tres" id="5_bd53k"]
+
+[sub_resource type="Resource" id="Resource_cjuf7"]
+script = ExtResource("2_yyldd")
+preset = ExtResource("1_axl1l")
+budget = 8
+start_alive = 3
+tier = 2
+mix = PackedFloat32Array(15, 35, 10, 30, 10, 0)
+
+[resource]
+script = ExtResource("4_el4qt")
+id = "mire"
+name = "The Mire"
+blurb = "Pools and causeways. Spitters love the water's edge."
+map_pos = Vector2i(2, 2)
+theme = ExtResource("5_bd53k")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTAAAATTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTT...T.T.TT.TT.T.TTTT.,,,,TTTTTT.TT.T.TTTT..TTT.TT", "TTTT................*...,,,,...............T......TT", "TTTT.....................,,...*...........TTT....TTT", "TTTT........~~~~~.~......,,................t......TT", "TTT.......~~~~~~~~~......,,.........~~~~~.........TT", "TTT......~~~~~~~~~~......,,........~~~~~~~~......TTT", "TTT......~~~~~~~~~~......,,.......~~~~~~~~~.......TT", "TTTT.......~~~~~~~.......,,........~~~~~~~~......TTT", "TTTT...................,,,,..........~~~.........TTT", "TTT.....T.............,,,,...................*...TTT", "TTTT...TTT...........,,,..........................TT", "D,,,,...t............,,..~~~.....................TTT", "D,,,,,@,,,,,,,,,,,,,,,,.~~~~~....R........,,,,...TTT", "D,,,,,,,,,,,,,,,,,,,,,,..~~~.........,,,,,,,,,...TTT", "D,,,,................,,..........,,,,,,,*,,......TTT", "TTTT........*........,,,,,,,,,,,,,,,,,............TT", "TTTT..................,,,,,,,,,,,,...............TTT", "TTTT............................~~~~~~~~.......*.TTT", "TTT..........~~~~..............~~~~~~~~~~~~......TTT", "TTTT......~~~~~~~~~~...........~~~~~~~~~~~~......TTT", "TTTT.....~~~~~~~~~~~~..........~~~~~~~~~~~.......TTT", "TTT.......~~~~~~~~~~............~.~~~~~~.........TTT", "TTTT.........~~~~.~.....*...................T.....TT", "TTTT...T...................................TTT....TT", "TTTT..TTT....................*..............t....TTT", "TTTT...t..........................................TT", "TTT...............................................TT", "TTTTt.t..t.tt..ttttt.tt..tt..t....t..tttt...ttt.tTTT", "TTTTtttttttttttttttttttttttttttttttttttttttttttttTTT")
+doors = {
+&"A": ["ridge", "C"],
+&"D": ["hollow", "B"]
+}
+encounter = SubResource("Resource_cjuf7")
+stands = PackedStringArray()
+reward = "daggers"

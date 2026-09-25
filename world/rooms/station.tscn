@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/rooms/station.gd" id="1_s"]
+
+[node name="Station" type="Node2D"]
+script = ExtResource("1_s")
+
+[node name="Screen" type="Node2D" parent="."]
+
+[node name="Prop" type="Sprite2D" parent="Screen"]
+
+[node name="Item" type="Sprite2D" parent="Screen"]
+visible = false

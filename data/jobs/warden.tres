@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://resources/job_data.gd" id="1_2580c"]
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="2_isv3e"]
+[ext_resource type="Resource" path="res://data/skills/totem.tres" id="3_dovng"]
+[ext_resource type="Resource" path="res://data/skills/bulwark.tres" id="4_m3xu5"]
+
+[resource]
+script = ExtResource("1_2580c")
+id = "warden"
+name = "Warden"
+blurb = "Holds ground with totems. Tough, a bit slower."
+hp_mul = 1.25
+speed_mul = 0.92
+dmg_mul = 0.95
+mana_mul = 0.9
+skills = Array[ExtResource("2_isv3e")]([ExtResource("3_dovng"), ExtResource("4_m3xu5")])
+unlock = "warden"

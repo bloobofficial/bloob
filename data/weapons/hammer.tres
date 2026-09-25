@@ -1,0 +1,97 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://resources/swing_data.gd" id="1_och8b"]
+[ext_resource type="Script" path="res://resources/weapon_data.gd" id="2_5bg50"]
+
+[sub_resource type="Resource" id="Resource_jiyyq"]
+script = ExtResource("1_och8b")
+name = "Meteor"
+windup = 4
+chain_from = 99
+range = 60.0
+arc = 1.3
+damage = 2.4
+knock = 7.0
+stagger = 24
+lunge = 0.6
+freeze_enemy = 4
+hitstop = 2
+knock_up = 1.0
+breaks_poise = true
+impact = 30.0
+pose = 2
+has_vis = true
+vis_lift = 1.0
+
+[sub_resource type="Resource" id="Resource_2b7a6"]
+script = ExtResource("1_och8b")
+name = "Crush"
+windup = 10
+active = 4
+recover = 14
+chain_from = 5
+range = 62.0
+arc = 1.2
+damage = 2.8
+knock = 8.0
+stagger = 26
+lunge = 2.0
+freeze_enemy = 5
+freeze_self = 4
+hitstop = 2
+knock_up = 2.5
+brute_knock_mul = 0.4
+breaks_poise = true
+impact = 28.0
+pose = 2
+has_vis = true
+vis_lift = 1.0
+
+[sub_resource type="Resource" id="Resource_74nu4"]
+script = ExtResource("1_och8b")
+name = "Graveshaker"
+windup = 16
+active = 4
+recover = 24
+chain_from = 99
+range = 82.0
+arc = 3.141592653589793
+damage = 4.4
+knock = 16.0
+stagger = 44
+lunge = 0.0
+freeze_enemy = 7
+freeze_self = 5
+hitstop = 6
+knock_up = 5.0
+brute_knock_mul = 0.6
+breaks_poise = true
+heavy = true
+pose = 2
+has_vis = true
+vis_from = -3.141592653589793
+vis_to = 3.141592653589793
+vis_lift = 0.2
+
+[resource]
+script = ExtResource("2_5bg50")
+id = "hammer"
+name = "Grave Hammer"
+blurb = "Slow. Honest. Crush, then shake the ground around you."
+combo = Array[ExtResource("1_och8b")]([SubResource("Resource_2b7a6"), SubResource("Resource_74nu4")])
+air = SubResource("Resource_jiyyq")
+move_mul = 0.88
+swing_move_mul = 0.15
+combo_window = 18
+combo_end_cd = 14
+cost = PackedInt32Array(90, 10, 0, 1)
+sprite = "weapon.hammer"
+held = true
+art_scale = 0.58
+grip = 0.16
+rest = 0.55
+fx_rim = Color(0.6, 0.34, 1, 1)
+fx_trail = Color(0.75, 0.62, 1, 1)
+fx_glow = Color(0.7, 0.5, 1, 1)
+fx_heavy_glow = Color(0.8, 0.45, 1, 1)
+traits = "2 hits · slow · huge knockback · ring finisher"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="1_ym6cu"]
+
+[resource]
+script = ExtResource("1_ym6cu")
+name = "Quake"
+desc = "Shockwave around Bloob: damage, knock back and pop up."
+params = {
+&"damage": 3.0,
+&"knock": 9.0,
+&"knock_up": 5.0,
+&"radius": 92.0,
+&"stagger": 40.0
+}

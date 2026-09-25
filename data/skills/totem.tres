@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="1_edy1a"]
+
+[resource]
+script = ExtResource("1_edy1a")
+id = 2
+name = "Totem"
+desc = "Plant a goo totem that shoots the nearest enemy for 12 s."
+cooldown = 420
+mana = 25
+params = {
+&"damage": 1.2,
+&"every": 14.0,
+&"life": 720.0,
+&"max": 2.0,
+&"range": 280.0
+}

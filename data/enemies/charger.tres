@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_s0wxb"]
+[ext_resource type="Resource" path="res://data/attacks/butt.tres" id="2_xk2tq"]
+[ext_resource type="Resource" path="res://data/attacks/gore.tres" id="3_hef76"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="4_lcbtg"]
+
+[resource]
+script = ExtResource("4_lcbtg")
+id = "charger"
+name = "Charger"
+color = Color(1, 0.55, 0.25, 1)
+routes = PackedFloat32Array(1, 0, 0, 0)
+charge_dist = 170.0
+charge_mul = 1.8
+attacks = Array[ExtResource("1_s0wxb")]([ExtResource("2_xk2tq"), ExtResource("3_hef76")])
+attack_weights = PackedFloat32Array(5, 5)

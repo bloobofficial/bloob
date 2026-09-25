@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_5m2r1"]
+
+[resource]
+script = ExtResource("1_5m2r1")
+id = "slash"
+name = "Slash"
+kind = 4
+range = 46.0
+windup = 16
+active = 3
+recover = 28
+cooldown = Vector2i(100, 170)
+damage = 7.0
+speed = 2.6
+arc = 0.75

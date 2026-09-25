@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://resources/theme_data.gd" id="1_1bv40"]
+
+[resource]
+script = ExtResource("1_1bv40")
+id = "forge"
+floor = Color(0.26, 0.23, 0.21, 1)
+path = Color(0.38, 0.3, 0.22, 1)
+wall = Color(0.31, 0.25, 0.23, 1)
+wall_side = Color(0.22, 0.16, 0.15, 1)
+foliage = Color(0.13, 0.12, 0.1, 1)
+tree = Color(0.9, 0.85, 0.75, 1)
+fog = Color(0.07, 0.045, 0.04, 1)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_m1i04"]
+
+[resource]
+script = ExtResource("1_m1i04")
+id = "stab"
+name = "Stab Dash"
+range = 120.0
+windup = 16
+recover = 26
+damage = 9.0
+speed = 7.0

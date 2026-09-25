@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_brhey"]
+
+[resource]
+script = ExtResource("1_brhey")
+id = "vigor1"
+name = "Thick Goo"
+desc = "+20 max HP"
+cost = PackedInt32Array(30, 0, 0, 0)
+req = PackedStringArray()

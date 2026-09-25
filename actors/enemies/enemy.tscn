@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://actors/enemies/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://actors/enemies/enemy_visual.gd" id="2_visual"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_footprint"]
+radius = 9.0
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 1048576
+collision_mask = 3
+motion_mode = 1
+wall_min_slide_angle = 0.0
+script = ExtResource("1_enemy")
+
+[node name="Footprint" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_footprint")
+
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("2_visual")
+
+[node name="Screen" type="Node2D" parent="Visual"]
+
+[node name="Sprite" type="Sprite2D" parent="Visual/Screen"]

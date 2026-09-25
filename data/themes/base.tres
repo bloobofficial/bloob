@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://resources/theme_data.gd" id="1_phfoh"]
+
+[resource]
+script = ExtResource("1_phfoh")
+id = "base"

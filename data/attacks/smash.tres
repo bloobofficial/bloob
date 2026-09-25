@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_m7654"]
+
+[resource]
+script = ExtResource("1_m7654")
+id = "smash"
+name = "Smash"
+kind = 4
+range = 74.0
+windup = 36
+active = 4
+recover = 50
+damage = 18.0
+speed = 1.5
+heavy = true
+arc = 1.1

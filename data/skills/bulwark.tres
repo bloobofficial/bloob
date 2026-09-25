@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="1_y6xmt"]
+
+[resource]
+script = ExtResource("1_y6xmt")
+id = 3
+name = "Bulwark"
+desc = "Stun everything close and take half damage for 1.5 s."
+cooldown = 480
+mana = 25
+params = {
+&"guard_mul": 0.5,
+&"guard_ticks": 90.0,
+&"knock": 6.0,
+&"radius": 110.0,
+&"stun": 60.0
+}

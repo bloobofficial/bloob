@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_8w7b1"]
+
+[resource]
+script = ExtResource("1_8w7b1")
+id = "pounce"
+name = "Pounce"
+kind = 3
+range = 240.0
+windup = 30
+active = 26
+recover = 40
+cooldown = Vector2i(220, 340)
+damage = 14.0
+radius = 40.0

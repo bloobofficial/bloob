@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_xr2u6"]
+
+[resource]
+script = ExtResource("1_xr2u6")
+id = "zombie"
+label = "Zombie"
+blurb = "Big horde. Personality and crowd flow do the work."
+horde_start = 120
+horde_max = 1400
+horde_ramp_per_sec = 14.0
+spawn_burst = 18
+spawn_every = 12
+mix = PackedFloat32Array(30, 30, 18, 12, 9, 1)

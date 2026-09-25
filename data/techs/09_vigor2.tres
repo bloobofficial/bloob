@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_8a00u"]
+
+[resource]
+script = ExtResource("1_8a00u")
+id = "vigor2"
+name = "Dense Goo"
+desc = "+30 max HP"
+cost = PackedInt32Array(90, 14, 0, 1)
+req = PackedStringArray("vigor1")

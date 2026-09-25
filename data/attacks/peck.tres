@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_8vfd2"]
+
+[resource]
+script = ExtResource("1_8vfd2")
+id = "peck"
+name = "Peck"
+kind = 4
+range = 44.0
+windup = 18
+active = 3
+cooldown = Vector2i(110, 180)
+damage = 7.0
+speed = 2.0
+arc = 0.7

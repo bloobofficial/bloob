@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://resources/job_data.gd" id="1_sp1s0"]
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="2_jr7gw"]
+[ext_resource type="Resource" path="res://data/skills/blink.tres" id="3_p7xxd"]
+[ext_resource type="Resource" path="res://data/skills/hex.tres" id="4_s0qb4"]
+
+[resource]
+script = ExtResource("1_sp1s0")
+id = "trickster"
+name = "Trickster"
+blurb = "Fast and fragile. Blink and Hex."
+hp_mul = 0.85
+speed_mul = 1.12
+dmg_mul = 1.1
+mana_mul = 1.25
+skills = Array[ExtResource("2_jr7gw")]([ExtResource("3_p7xxd"), ExtResource("4_s0qb4")])
+unlock = "trickster"

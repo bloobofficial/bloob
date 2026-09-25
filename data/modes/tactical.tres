@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_ncou0"]
+
+[resource]
+script = ExtResource("1_ncou0")
+id = "tactical"
+label = "Tactical"
+blurb = "Few enemies, real squads. Pin, flank, commit."
+mix = PackedFloat32Array(0, 0, 0, 0, 0, 0)
+squads_start = 2
+squads_max = 7
+squad_every = 420
+brain = 1

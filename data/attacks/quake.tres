@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_xci6n"]
+
+[resource]
+script = ExtResource("1_xci6n")
+id = "quake"
+name = "Ground Slam"
+kind = 2
+range = 110.0
+windup = 46
+active = 1
+recover = 56
+cooldown = Vector2i(150, 230)
+damage = 20.0
+radius = 88.0
+heavy = true

@@ -1,0 +1,150 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://resources/swing_data.gd" id="1_fqq6e"]
+[ext_resource type="Script" path="res://resources/weapon_data.gd" id="2_ye0uk"]
+
+[sub_resource type="Resource" id="Resource_b6rqh"]
+script = ExtResource("1_fqq6e")
+name = "Fang Flurry"
+windup = 1
+recover = 5
+chain_from = 99
+arc = 1.2
+damage = 1.2
+knock = 3.0
+stagger = 12
+lunge = 1.4
+knock_up = 3.0
+has_vis = true
+vis_from = -1.2
+vis_to = 1.2
+vis_lift = 0.4
+
+[sub_resource type="Resource" id="Resource_41xa6"]
+script = ExtResource("1_fqq6e")
+name = "Bite"
+windup = 2
+active = 2
+recover = 5
+chain_from = 2
+range = 44.0
+arc = 0.95
+damage = 1.1
+knock = 1.6
+stagger = 8
+lunge = 2.2
+freeze_enemy = 2
+freeze_self = 1
+pose = 0
+has_vis = true
+vis_from = -1.1
+vis_to = 0.9
+vis_lift = 0.2
+
+[sub_resource type="Resource" id="Resource_o157c"]
+script = ExtResource("1_fqq6e")
+name = "Bite"
+windup = 2
+active = 2
+recover = 5
+chain_from = 2
+range = 44.0
+arc = 0.95
+damage = 1.1
+knock = 1.6
+stagger = 8
+lunge = 2.2
+freeze_enemy = 2
+freeze_self = 1
+pose = 1
+has_vis = true
+vis_from = 1.1
+vis_to = -0.9
+vis_lift = 0.2
+
+[sub_resource type="Resource" id="Resource_ov0a5"]
+script = ExtResource("1_fqq6e")
+name = "Bite"
+windup = 2
+active = 2
+recover = 5
+chain_from = 2
+range = 44.0
+arc = 0.95
+damage = 1.1
+knock = 1.6
+stagger = 8
+lunge = 2.2
+freeze_enemy = 2
+freeze_self = 1
+pose = 0
+has_vis = true
+vis_from = -1.1
+vis_to = 0.9
+vis_lift = 0.2
+
+[sub_resource type="Resource" id="Resource_mx6bd"]
+script = ExtResource("1_fqq6e")
+name = "Bite"
+windup = 2
+active = 2
+recover = 5
+chain_from = 2
+range = 44.0
+arc = 0.95
+damage = 1.1
+knock = 1.6
+stagger = 8
+lunge = 2.2
+freeze_enemy = 2
+freeze_self = 1
+pose = 1
+has_vis = true
+vis_from = 1.1
+vis_to = -0.9
+vis_lift = 0.2
+
+[sub_resource type="Resource" id="Resource_kkngf"]
+script = ExtResource("1_fqq6e")
+name = "Crossbite"
+windup = 4
+recover = 14
+chain_from = 99
+range = 50.0
+arc = 1.3
+damage = 2.2
+knock = 6.0
+stagger = 22
+lunge = 4.0
+freeze_enemy = 4
+hitstop = 2
+knock_up = 1.5
+heavy = true
+pose = 2
+has_vis = true
+vis_from = -1.4
+vis_to = 1.4
+vis_lift = 0.3
+
+[resource]
+script = ExtResource("2_ye0uk")
+id = "daggers"
+name = "Twin Fangs"
+blurb = "Five fast bites. Stay close, stay moving."
+combo = Array[ExtResource("1_fqq6e")]([SubResource("Resource_41xa6"), SubResource("Resource_o157c"), SubResource("Resource_ov0a5"), SubResource("Resource_mx6bd"), SubResource("Resource_kkngf")])
+air = SubResource("Resource_b6rqh")
+move_mul = 1.12
+swing_move_mul = 0.4
+combo_window = 14
+combo_end_cd = 6
+cost = PackedInt32Array(70, 0, 8, 0)
+sprite = "weapon.daggers"
+held = true
+art_scale = 0.36
+grip = 0.21
+rest = 0.6
+fx_rim = Color(1, 0.28, 0.68, 1)
+fx_trail = Color(1, 0.6, 0.85, 1)
+fx_glow = Color(1, 0.4, 0.75, 1)
+fx_heavy_glow = Color(1, 0.35, 0.7, 1)
+traits = "5 hits · fastest · short reach · run faster"

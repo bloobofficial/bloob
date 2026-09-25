@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_q5wml"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_e74m2"]
+[ext_resource type="Resource" path="res://data/themes/sanctum.tres" id="3_k06to"]
+
+[sub_resource type="Resource" id="Resource_u8sgu"]
+script = ExtResource("1_q5wml")
+name = "Keeper Moss"
+tint = Color(0.72, 0.95, 0.7, 1)
+lines = PackedStringArray("The Shrine takes what you gather and gives back something sharper.", "Passages seal when the wild ones come. Clear them and the way opens.", "Forge to the west, Lounge to the east. The Hollow is north, and it bites.", "Come home when you\'re hurt. The Sanctum always mends you.")
+
+[resource]
+script = ExtResource("2_e74m2")
+id = "sanctum"
+name = "Sanctum"
+kind = "hub"
+blurb = "Home. The Shrine, the Keeper, a well. Forge west, Lounge east, trouble north."
+map_pos = Vector2i(1, 3)
+theme = ExtResource("3_k06to")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTAAAATTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTT", "TTT.TTT....TTT.T.T..,,,,.TT.TTTTT.TT..TTTTTT", "TTTT................,,,,..................TT", "TTTT..........,,,,,,,,,,,,,,,,,..........TTT", "TTTT..........,,,,,,,,,,,,,,,,,..........TTT", "TTTT..........,,.1111111111..,,..........TTT", "TTTT.....##...,,.1111S11111..,,..##......TTT", "TTTT.....##...,,.1111111P11..,,..##.......TT", "TTTT..........,,.1111111111..,,...........TT", "TTT...........,,.1111111111..,,..........TTT", "TTTT..........,,....cccc.....,,..........TTT", "D,,,,.........,,....bbbb.....,,........,,,,B", "D,,,,,,,,,,,,,,,....aaaa.....,,,,,,,,,,,,,,B", "D,,,,,,,,,,,,,,,.............,,,,,,,,,,,,,,B", "D,,,,.........,,.............,,........,,,,B", "TTT....TTT....,,,,,,,,,,,,,,,,,...TTT....TTT", "TTT...TTTTT...,,,,,,,,,,,,,,,,,..TTTTT...TTT", "TTTT...ttt...........,,...........ttt.....TT", "TTT..................,@...H..............TTT", "TTTT.....##..........,,..........##.......TT", "TTTT.....##..........,,..........##......TTT", "TTTT.................,,..................TTT", "TTTT.................,,..................TTT", "TTT..................,,..................TTT", "TTTT................,,,,.................TTT", "TTT.................,,,,.................TTT", "TTT.tttttttt.ttt.t..,,,,tt...t..tttt.ttttTTT", "TTTTttttttttttttttttCCCCtttttttttttttttttTTT")
+doors = {
+&"A": ["hollow", "C"],
+&"B": ["lounge", "D"],
+&"C": ["yard", "A"],
+&"D": ["forge", "B"]
+}
+restore = true
+stands = PackedStringArray()
+npcs = Array[ExtResource("1_q5wml")]([SubResource("Resource_u8sgu")])

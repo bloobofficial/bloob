@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Resource" path="res://data/modes/skirmish.tres" id="1_tu1ew"]
+[ext_resource type="Script" path="res://resources/encounter_data.gd" id="2_icdm7"]
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="3_bc18x"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="4_lq4jx"]
+[ext_resource type="Resource" path="res://data/themes/thorn.tres" id="5_ehvgs"]
+
+[sub_resource type="Resource" id="Resource_ui4qn"]
+script = ExtResource("2_icdm7")
+preset = ExtResource("1_tu1ew")
+budget = 8
+start_alive = 1
+squads = 1
+tier = 2
+mix = PackedFloat32Array(10, 10, 35, 10, 35, 0)
+
+[resource]
+script = ExtResource("4_lq4jx")
+id = "thornwood"
+name = "Thornwood"
+blurb = "Tight lanes between thorn thickets. Flankers and stalkers hunt in packs."
+map_pos = Vector2i(0, 1)
+theme = ExtResource("5_ehvgs")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTAAAATTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTT.TTTTTTT.T.T..TT..,,,,TT.TTT.TTT.TT..T..TTTTTT", "TTTTT.T.......T...T.*...,,,,T..T....T....T*.....TTTT", "TTTTT..*.................,,....................TTTTT", "TTTTT....................,,......T.T.............TTT", "TTTTT........TTT.......ttt,....TTTTT...........T.TTT", "TTTTT.....TTTTTT.........,,,...TTTTTTT.........TTTTT", "TTTT......TTTTTTT.........,,...ttttttt.....ttt..TTTT", "TTTT.T......tttt..........,,......tt.............TTT", "TTTTT........tt...........,,.....................TTT", "TTTTTT....................,,,...................TTTT", "TTTTTT*..................TTT,,,...............,,,,,B", "TTTT.....................TTT,,,,,,,,,,,,,,,,,,,,,,,B", "TTTT.T...................ttt..,,,,,,,,,,,,,,@,,,,,,B", "TTTTT.........................................,,,,,B", "TTTTTT...........................*..............TTTT", "TTTTT...TTT.......TTT.................TT.T......TTTT", "TTTT.T..TTT......TTTTTT.............TTTTTTT......TTT", "TTTT....ttt......TTTTTT.............TTTTTTT.....TTTT", "TTTT.............ttttt...............tttttt.....TTTT", "TTTTT.............t..................t.ttt.....TTTTT", "TTTTT..........................................TTTTT", "TTTTT........................ttt................TTTT", "TTTTT......*.ttt............*.................*.TTTT", "TTTTTT..........................................TTTT", "TTTT............................................TTTT", "TTTTT...........................................TTTT", "TTTTTtt.t..ttttt.tttt..ttt..tttt.tttttttt..t.ttt.TTT", "TTTTTTttttttttttttttttttttttttttttttttttttttttttTTTT")
+doors = {
+&"A": ["barrow", "C"],
+&"B": ["wayshrine", "D"]
+}
+encounter = SubResource("Resource_ui4qn")
+stands = PackedStringArray()

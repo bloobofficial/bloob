@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_xg6c4"]
+
+[resource]
+script = ExtResource("1_xg6c4")
+id = "rend"
+name = "Rend"
+kind = 4
+range = 52.0
+windup = 22
+active = 3
+recover = 34
+cooldown = Vector2i(130, 210)
+damage = 11.0
+speed = 2.0
+arc = 0.85

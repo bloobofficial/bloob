@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ModeData" format=3]
+
+[ext_resource type="Script" path="res://resources/mode_data.gd" id="1_bi4lx"]
+
+[resource]
+script = ExtResource("1_bi4lx")
+id = "stress"
+label = "Stress"
+blurb = "Stress test: a big horde and bullet sprayers. God mode."
+horde_start = 2000
+horde_max = 2000
+spawn_burst = 200
+spawn_every = 2
+mix = PackedFloat32Array(30, 30, 18, 12, 9, 1)
+emitters = 8
+god_mode = true
+patterns = false
+loot = false

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_dqve5"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_blm44"]
+[ext_resource type="Resource" path="res://data/themes/base.tres" id="3_qobgv"]
+
+[resource]
+script = ExtResource("2_blm44")
+id = "yard"
+name = "Old Yard"
+kind = "training"
+blurb = "The old sanctum, floating on its own. A quiet place to practise jumps and dives."
+map_pos = Vector2i(1, 4)
+theme = ExtResource("3_qobgv")
+layout = PackedStringArray("              AAAA              ", "            ..AAAA..            ", "         ..............         ", "       ..................       ", "     ......................     ", "    ........................    ", "   .......111111111.........    ", "  ........111111111...........  ", "..........1111##111.............", "..........1111##111.............", "  ........111111111...........  ", "   .......111111111.........    ", "   ..........ccc............    ", "   ..........bbb............    ", "    .........aaa...........     ", "     ...........@..........     ", "       ..................       ", "         ..............         ", "            ........            ")
+doors = {
+&"A": ["sanctum", "C"]
+}
+stands = PackedStringArray()

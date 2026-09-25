@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://resources/skill_data.gd" id="1_ngm32"]
+
+[resource]
+script = ExtResource("1_ngm32")
+id = 4
+name = "Blink"
+desc = "Teleport toward the aim; your old spot explodes."
+cooldown = 180
+mana = 15
+params = {
+&"damage": 3.0,
+&"fuse": 30.0,
+&"iframes": 12.0,
+&"radius": 70.0,
+&"range": 150.0
+}

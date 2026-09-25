@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_4lb1j"]
+[ext_resource type="Resource" path="res://data/attacks/pounce.tres" id="2_51h2k"]
+[ext_resource type="Resource" path="res://data/attacks/gore.tres" id="3_mmofi"]
+[ext_resource type="Resource" path="res://data/attacks/rend.tres" id="4_83v00"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="5_rqm5w"]
+
+[resource]
+script = ExtResource("5_rqm5w")
+id = "stalker"
+name = "Stalker"
+kind_index = 4
+color = Color(1, 0.45, 0.7, 1)
+radius = 8.0
+hp = 15.0
+speed = 1.6
+routes = PackedFloat32Array(2, 1, 1, 0)
+charge_mul = 1.9
+hold_dist = 230.0
+hold_ticks = Vector2i(180, 420)
+contact_damage = 10.0
+attacks = Array[ExtResource("1_4lb1j")]([ExtResource("2_51h2k"), ExtResource("3_mmofi"), ExtResource("4_83v00")])
+attack_weights = PackedFloat32Array(6, 2, 2)
+loot_ichor = Vector2i(5, 8)
+loot_extra_chance = 0.65
+loot_shard_chance = 0.04
+loot_heal_chance = 0.28
+kill_xp = 6
+sprite_scale = 0.56

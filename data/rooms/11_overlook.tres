@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_0k2mh"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_t8py4"]
+[ext_resource type="Resource" path="res://data/themes/overlook.tres" id="3_b5u4r"]
+
+[resource]
+script = ExtResource("2_t8py4")
+id = "overlook"
+name = "The Overlook"
+kind = "explore"
+blurb = "A lookout over the abyss. Climb to the top; someone left something there."
+map_pos = Vector2i(1, 0)
+theme = ExtResource("3_b5u4r")
+layout = PackedStringArray("", "", "", " TT..  . ...  22222222222222.. . . .....", "TTTT..........222222R2222222...........TTT", "TTTT..........22222222222222...........TTT", "TTTT..........22222222222222............TT", "TTT...........22222222222222...........TTT", "TTTT..........22222222222222...........TTT", "TTT.....11111111111ffff11111111111......TT", "TTTT....11111111111eeee11111111111.....TTT", "TTT.....11111111111dddd11111111111.....TTT", "TTTT....1111111111111111111111X111......TT", "TTT.....11111111111111111111111111.....TTT", "TTT.....11111111111111111111111111.....TTT", "TTTT....11111111111111111111111111......TT", "D,,,,...11111111111111111111111111.....TTT", "D,,,,,,,...........cccc................TTT", "D,,,,,,,,,,,,......bbbb................TTT", "D,,,,..,,,,,,,,,,..aaaa.................TT", "TTTT........,,,,,,,,,,..........TTT....TTT", "TTTT............,,,,,,.........TTTTT....TT", "TTTT................,,..........ttt....TTT", "TTTT................,,.................TTT", "TTTT................@,..................TT", "TTT.................,,..................TT", "TTTT...............,,,,................TTT", "TTTT...............,,,,................TTT", "TTTTtt...tttt.tttt.,,,,ttt..tttttttt.ttTTT", "TTTTtttttttttttttttCCCCtttttttttttttttttTT")
+doors = {
+&"C": ["wayshrine", "A"],
+&"D": ["barrow", "B"]
+}
+stands = PackedStringArray()
+reward = "spear"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TierData" format=3]
+
+[ext_resource type="Script" path="res://resources/tier_data.gd" id="1_oql0m"]
+
+[resource]
+script = ExtResource("1_oql0m")
+name = "Dire"
+hp_mul = 1.38
+dmg_mul = 1.22
+atk_rate = 1.25
+speed_mul = 1.08
+squads = true
+elite_chance = 0.24
+two_affix_chance = 0.55
+max_alive = 4

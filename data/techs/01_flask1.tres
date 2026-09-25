@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_v36jb"]
+
+[resource]
+script = ExtResource("1_v36jb")
+id = "flask1"
+name = "Deeper Flask"
+desc = "+1 flask charge"
+cost = PackedInt32Array(40, 5, 0, 0)
+req = PackedStringArray()

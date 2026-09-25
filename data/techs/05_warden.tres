@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TechData" format=3]
+
+[ext_resource type="Script" path="res://resources/tech_data.gd" id="1_w8pf1"]
+
+[resource]
+script = ExtResource("1_w8pf1")
+id = "warden"
+name = "Way of the Warden"
+desc = "Unlocks the Warden job"
+cost = PackedInt32Array(60, 10, 6, 0)
+req = PackedStringArray()

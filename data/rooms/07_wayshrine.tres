@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="1_g8nvl"]
+[ext_resource type="Script" path="res://resources/room_data.gd" id="2_5qxvi"]
+[ext_resource type="Resource" path="res://data/themes/way.tres" id="3_y3ij7"]
+
+[sub_resource type="Resource" id="Resource_uagtn"]
+script = ExtResource("1_g8nvl")
+name = "Wayfarer Lune"
+tint = Color(1, 0.9, 0.55, 1)
+lines = PackedStringArray("Crossroads. Thornwood west, the Ridge east, the Overlook north.", "The well mends you. Drink before you go on.", "The Barrow is past the Thornwood. Bring something heavier than claws.")
+
+[resource]
+script = ExtResource("2_5qxvi")
+id = "wayshrine"
+name = "Wayshrine"
+kind = "rest"
+blurb = "A crossroads with a Shrine and a well. Thornwood west, Ridge east, Overlook north."
+map_pos = Vector2i(1, 1)
+theme = ExtResource("3_y3ij7")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTAAAATTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTT,,,,TTTTTTTTTTTTTTTTT", "TTT..TTT...TTTTT.,,,,TTTTTT.TTT..T.TTT", "TTTT.............,,,,..............TTT", "TTT...##..........,,..........##....TT", "TTTT..##..........,,..........##...TTT", "TTTT..............,,................TT", "TTT........S......,,......H........TTT", "TTTT..............,,................TT", "TTTT..............,,................TT", "TTTT..............,,...............TTT", "D,,,,.............,,.............,,,,B", "D,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B", "D,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B", "D,,,,.............,,.............,,,,B", "TTTT..............,,...............TTT", "TTTT..............,@................TT", "TTTT..............,,................TT", "TTTT......TTT.....,,.....P.........TTT", "TTT......TTTTT....,,................TT", "TTTT..##..ttt.....,,..........##...TTT", "TTTT..##..........,,..........##....TT", "TTTT..............,,...............TTT", "TTTT.............,,,,..............TTT", "TTTT.............,,,,..............TTT", "TTTTtt.t..tt..ttt,,,,t.ttt.tttt..tt.TT", "TTTTtttttttttttttCCCCttttttttttttttTTT")
+doors = {
+&"A": ["overlook", "C"],
+&"B": ["ridge", "D"],
+&"C": ["hollow", "A"],
+&"D": ["thornwood", "B"]
+}
+stands = PackedStringArray()
+npcs = Array[ExtResource("1_g8nvl")]([SubResource("Resource_uagtn")])
