@@ -1,0 +1,61 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://camera/game_camera.gd" id="2_camera"]
+
+[sub_resource type="RectangleShape2D" id="Rect_wall_h"]
+size = Vector2(704, 32)
+
+[sub_resource type="RectangleShape2D" id="Rect_wall_v"]
+size = Vector2(32, 448)
+
+[sub_resource type="RectangleShape2D" id="Rect_pillar"]
+size = Vector2(64, 64)
+
+[node name="MovementTest" type="Node2D"]
+
+[node name="Floor" type="ColorRect" parent="."]
+offset_left = -320.0
+offset_top = -192.0
+offset_right = 320.0
+offset_bottom = 192.0
+color = Color(0.22, 0.26, 0.24, 1)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_mask = 0
+
+[node name="North" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, -208)
+shape = SubResource("Rect_wall_h")
+
+[node name="South" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, 208)
+shape = SubResource("Rect_wall_h")
+
+[node name="West" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-336, 0)
+shape = SubResource("Rect_wall_v")
+
+[node name="East" type="CollisionShape2D" parent="Walls"]
+position = Vector2(336, 0)
+shape = SubResource("Rect_wall_v")
+
+[node name="Pillar" type="CollisionShape2D" parent="Walls"]
+position = Vector2(128, -32)
+shape = SubResource("Rect_pillar")
+
+[node name="PillarDrawing" type="ColorRect" parent="Walls"]
+offset_left = 96.0
+offset_top = -64.0
+offset_right = 160.0
+offset_bottom = 0.0
+color = Color(0.27, 0.24, 0.31, 1)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(-160, 64)
+
+[node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+process_callback = 0
+zoom = Vector2(2, 2)
+script = ExtResource("2_camera")
+target = NodePath("../Player")

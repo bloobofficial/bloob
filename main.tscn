@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://11q8borw37ln"]
+
+[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://camera/game_camera.gd" id="2_camera"]
+
+[node name="Main" type="Node2D" unique_id=111760287]
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+
+[node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+process_callback = 0
+zoom = Vector2(2, 2)
+script = ExtResource("2_camera")
+target = NodePath("../Player")
