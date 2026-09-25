@@ -17,7 +17,13 @@ var map: RoomMap
 var theme: ThemeData
 var _occluders: Array[Node] = []
 var _trees: Array[Node2D] = []
-var _base_cells := []         ## [cx, cy] of ground-level cells, drawn here
+var _tree_pos := PackedVector2Array()
+var _tree_bush: Array[bool] = []
+var _faded: Array[Sprite2D] = []
+
+
+func _ready() -> void:
+	Art.baked.connect(refresh_trees)
 
 
 func build(m: RoomMap, th: ThemeData, actors: Node2D) -> void:
@@ -29,6 +35,9 @@ func build(m: RoomMap, th: ThemeData, actors: Node2D) -> void:
 		n.queue_free()
 	_occluders.clear()
 	_trees.clear()
+	_tree_pos.clear()
+	_tree_bush.clear()
+	_faded.clear()
 	var S := RoomMap.SKIRT
 	# occluders: runs of raised cells per row
 	for cy in range(-S, map.h + S):
@@ -174,24 +183,39 @@ func _build_trees(actors: Node2D) -> void:
 			tree.set_meta("z", float(l.h))
 			actors.add_child(tree)
 			_trees.append(tree)
+			_tree_pos.append(tree.position)
+			_tree_bush.append(bush)
 
 
-## keep sprites upright if the camera tilts, retexture once the art has baked,
-## and make foliage between Bloob and the camera see-through
+## make foliage between Bloob and the camera see-through (only trees near him can be)
 func update_scenery(player_pos: Vector2) -> void:
+	for i in _faded.size():
+		var spr: Sprite2D = _faded[i]
+		spr.self_modulate.a = 1.0
+	_faded.clear()
+	for i in _tree_pos.size():
+		if _tree_bush[i]:
+			continue
+		var tp := _tree_pos[i]
+		var dy := tp.y - player_pos.y
+		if dy <= -6.0 or dy >= 250.0 or absf(tp.x - player_pos.x) >= 80.0 + dy * 0.25:
+			continue
+		var spr := _trees[i].get_child(0) as Sprite2D
+		spr.self_modulate.a = 0.5
+		_faded.append(spr)
+
+
+## after the art bakes, or the camera tilts: retexture and re-stand every tree
+func refresh_trees() -> void:
 	for tree in _trees:
 		var spr := tree.get_child(0) as Sprite2D
-		var bush: bool = tree.get_meta("bush")
-		var size: float = spr.scale.x
-		spr.scale.y = size * View.upright()
-		spr.position.y = View.lift(tree.get_meta("z"))
 		spr.texture = Art.frame("tree.%d" % tree.get_meta("variant"))
-		var y := tree.position.y
-		var fade := not bush and y > player_pos.y - 6 and y < player_pos.y + 250 and absf(tree.position.x - player_pos.x) < 80 + (y - player_pos.y) * 0.25
-		spr.self_modulate.a = 0.5 if fade else 1.0
+		spr.scale.y = spr.scale.x * View.upright()
+		spr.position.y = View.lift(tree.get_meta("z"))
 
 
 func redraw_all() -> void:
 	queue_redraw()
+	refresh_trees()
 	for o in _occluders:
 		o.queue_redraw()

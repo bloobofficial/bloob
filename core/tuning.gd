@@ -19,7 +19,7 @@ const FALL_OUT_Z := -260.0         ## below this over the void: ring-out
 const FALL_STUN_H := 40.0          ## landing after a drop this big stuns enemies
 ## Godot port: enemy cap (the prototype allows 4096; the 2,000-enemy stress preset is scaled down)
 const MAX_ENEMIES := 300
-const MAX_BULLETS := 3000
+const MAX_BULLETS := 1500
 const MAX_PICKUPS := 768
 const MAX_TOTEMS := 8
 

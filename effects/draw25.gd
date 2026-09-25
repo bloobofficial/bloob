@@ -6,10 +6,32 @@ extends RefCounted
 ## they stay round.
 
 
+static var _disc: Texture2D
+
+
+## a soft-edged disc, drawn as one textured quad (draw_circle is costly in bulk)
+static func disc() -> Texture2D:
+	if _disc == null:
+		var n := 64
+		var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+		var c := (n - 1) / 2.0
+		for y in n:
+			for x in n:
+				var d := Vector2(x - c, y - c).length()
+				img.set_pixel(x, y, Color(1, 1, 1, clampf(c - d + 0.5, 0.0, 1.0)))
+		_disc = ImageTexture.create_from_image(img)
+	return _disc
+
+
+## a filled circle of radius r at `at` in the current transform
+static func dot(ci: CanvasItem, at: Vector2, r: float, col: Color) -> void:
+	ci.draw_texture_rect(disc(), Rect2(at.x - r, at.y - r, r * 2.0, r * 2.0), false, col)
+
+
 static func upright_circle(ci: CanvasItem, at: Vector2, r: float, col: Color) -> void:
-	ci.draw_set_transform(at, 0.0, Vector2(1.0, View.upright()))
-	ci.draw_circle(Vector2.ZERO, r, col)
-	ci.draw_set_transform(Vector2.ZERO)
+	# an upright circle = a disc r wide and r / ground_k tall in (pre-squash) world space
+	var ry := r * View.upright()
+	ci.draw_texture_rect(disc(), Rect2(at.x - r, at.y - ry, r * 2.0, ry * 2.0), false, col)
 
 
 static func upright_rect(ci: CanvasItem, at: Vector2, half: float, col: Color) -> void:
@@ -19,12 +41,15 @@ static func upright_rect(ci: CanvasItem, at: Vector2, half: float, col: Color) -
 
 
 static func ground_circle(ci: CanvasItem, at: Vector2, r: float, col: Color) -> void:
-	ci.draw_circle(at, r, col)
+	dot(ci, at, r, col)
 
 
 static func ground_ellipse(ci: CanvasItem, at: Vector2, rx: float, ry: float, col: Color, rot: float = 0.0) -> void:
-	ci.draw_set_transform(at, rot, Vector2(1.0, ry / maxf(rx, 0.001)))
-	ci.draw_circle(Vector2.ZERO, rx, col)
+	if rot == 0.0:
+		ci.draw_texture_rect(disc(), Rect2(at.x - rx, at.y - ry, rx * 2.0, ry * 2.0), false, col)
+		return
+	ci.draw_set_transform(at, rot, Vector2.ONE)
+	ci.draw_texture_rect(disc(), Rect2(-rx, -ry, rx * 2.0, ry * 2.0), false, col)
 	ci.draw_set_transform(Vector2.ZERO)
 
 

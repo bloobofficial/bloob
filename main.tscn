@@ -1,14 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://11q8borw37ln"]
+[gd_scene load_steps=5 format=3 uid="uid://11q8borw37ln"]
 
-[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="1_player"]
-[ext_resource type="Script" path="res://camera/game_camera.gd" id="2_camera"]
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://world/world.tscn" id="2_world"]
+[ext_resource type="Script" path="res://camera/game_camera.gd" id="3_camera"]
+[ext_resource type="Script" path="res://ui/hud.gd" id="4_hud"]
 
-[node name="Main" type="Node2D" unique_id=111760287]
+[node name="Main" type="Node" unique_id=111760287]
+process_mode = 3
+script = ExtResource("1_main")
 
-[node name="Player" parent="." instance=ExtResource("1_player")]
+[node name="World" parent="." instance=ExtResource("2_world")]
+process_mode = 1
 
-[node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+[node name="Camera" type="Camera2D" parent="."]
+process_mode = 3
 process_callback = 0
-zoom = Vector2(2, 2)
-script = ExtResource("2_camera")
-target = NodePath("../Player")
+script = ExtResource("3_camera")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+process_mode = 3
+script = ExtResource("4_hud")
+
+[node name="Panels" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 10

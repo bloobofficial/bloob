@@ -97,13 +97,22 @@ func update() -> void:
 			i += 1
 			continue
 		var hit: Enemy = null
-		for e: Enemy in world.neighbours(at):
-			if not e.alive or absf(e.z + 12.0 - bz) > 26.0:
-				continue
-			var rr := e.radius + 3.0
-			if at.distance_squared_to(e.position) < rr * rr:
-				hit = e
-				break
+		if not world.enemies.is_empty():
+			var gcx := floori(at.x / Tuning.CELL)
+			var gcy := floori(at.y / Tuning.CELL)
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					for e: Enemy in world.grid_at(gcx + ox, gcy + oy):
+						if not e.alive or absf(e.z + 12.0 - bz) > 26.0:
+							continue
+						var rr := e.radius + 3.0
+						if at.distance_squared_to(e.position) < rr * rr:
+							hit = e
+							break
+					if hit:
+						break
+				if hit:
+					break
 		if hit == null:
 			i += 1
 			continue
@@ -124,18 +133,27 @@ func _draw() -> void:
 	if world == null:
 		return
 	var map := world.map
+	# shadows under enemy shots lie on the ground
 	for i in pos.size():
-		var at := View.to_world(pos[i], z[i])
+		if who_of[i] == OWNER_ENEMY:
+			var g := map.ground_at(pos[i].x, pos[i].y)
+			if g != Tuning.VOID_H:
+				Draw25.dot(self, View.to_world(pos[i], g), 4.0, Color(0, 0, 0, 0.3))
+	# the glows stand upright: one counter-scaled transform for all of them
+	var k := View.ground_k
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, View.upright()))
+	for i in pos.size():
+		var w := View.to_world(pos[i], z[i])
+		var at := Vector2(w.x, w.y * k)
 		match who_of[i]:
 			OWNER_PLAYER:
-				Draw25.upright_circle(self, at, 3.4, Color(0.8, 1, 0.55))
+				Draw25.dot(self, at, 3.4, Color(0.8, 1, 0.55))
 			OWNER_ENEMY:
-				var g := map.ground_at(pos[i].x, pos[i].y)
-				if g != Tuning.VOID_H:
-					Draw25.ground_circle(self, View.to_world(pos[i], g), 4.0, Color(0, 0, 0, 0.3))
-				Draw25.upright_circle(self, at, 9.0, Color(1, 0.3, 0.6, 0.18))
-				Draw25.upright_circle(self, at, 4.5, Color(1, 0.3, 0.6))
+				Draw25.dot(self, at, 9.0, Color(1, 0.3, 0.6, 0.18))
+				Draw25.dot(self, at, 4.5, Color(1, 0.3, 0.6))
 			OWNER_TOTEM:
-				Draw25.upright_circle(self, at, 3.0, Color(1, 0.85, 0.45))
+				Draw25.dot(self, at, 3.0, Color(1, 0.85, 0.45))
 			_:
-				Draw25.upright_circle(self, at, 2.6, Color(0.3, 0.75, 0.8, 0.8))
+				# stress-test sprayer shots: many of them, so a cheap square
+				draw_rect(Rect2(at.x - 2.2, at.y - 2.2, 4.4, 4.4), Color(0.3, 0.75, 0.8, 0.8))
+	draw_set_transform(Vector2.ZERO)

@@ -59,6 +59,8 @@ var dives := 0
 ## scripted input (tests); when null the Input Map is sampled
 var scripted: InputFrame = null
 var last_input := InputFrame.new()
+## set while a panel is over the game: clicks and T belong to the panel, not to Bloob
+var block_actions := false
 
 @onready var melee: PlayerMelee = $Melee
 @onready var visual: PlayerVisual = $Visual
@@ -144,6 +146,10 @@ func read_input(walking: bool) -> InputFrame:
 	else:
 		f = InputFrame.sample(world.aim_ground(z))
 		f.atk = f.atk or Input.is_action_just_pressed(&"attack")
+		if block_actions:
+			f.atk = false
+			f.fire = false
+			f.use = false
 	last_input = f
 	if walking:
 		# during a passage walk-out / walk-in Bloob just walks (aim kept, actions dropped)

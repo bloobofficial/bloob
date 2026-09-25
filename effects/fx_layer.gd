@@ -10,8 +10,18 @@ const SLASH_LIFE := 0.16
 const PGRAV := 0.35
 
 var world: World
-# particles: [pos Vector2, z, vel Vector2, vz, life, max_life, size, color, square]
-var _p: Array = []
+# particles: a fixed ring buffer (when full, the oldest is overwritten), like the prototype
+var _pp := PackedVector2Array()      ## position
+var _pz := PackedFloat32Array()      ## height
+var _pv := PackedVector2Array()      ## velocity
+var _pvz := PackedFloat32Array()
+var _pl := PackedFloat32Array()      ## life left (<= 0 = free)
+var _pml := PackedFloat32Array()     ## max life
+var _ps := PackedFloat32Array()      ## size
+var _pc := PackedColorArray()
+var _psq := PackedByteArray()        ## 1 = square pixel spark
+var _next := 0
+var _active := 0
 var _rings: Array = []       ## [pos, z, r, max_r, life, color]
 var _slashes: Array = []     ## dictionaries
 var _ghosts: Array = []      ## [pos, z, kind, life, size, flip]
@@ -32,10 +42,16 @@ var _t := 0.0
 
 func _ready() -> void:
 	Events.game_event.connect(_on_event)
+	for arr in [_pp, _pv]:
+		arr.resize(MAX_PARTICLES)
+	for arr in [_pz, _pvz, _pl, _pml, _ps]:
+		arr.resize(MAX_PARTICLES)
+	_pc.resize(MAX_PARTICLES)
+	_psq.resize(MAX_PARTICLES)
 
 
 func reset() -> void:
-	_p.clear()
+	_pl.fill(0.0)
 	_rings.clear()
 	_slashes.clear()
 	_ghosts.clear()
@@ -46,13 +62,14 @@ func reset() -> void:
 
 
 func particle_count() -> int:
-	return _p.size()
+	return _active
 
 
 func _spawn(pos: Vector2, z: float, vel: Vector2, vz: float, life: float, size: float, col: Color, square := false) -> void:
-	if _p.size() >= MAX_PARTICLES:
-		_p.pop_front()
-	_p.append([pos, z, vel, vz, life, life, size, col, square])
+	var i := _next
+	_next = (_next + 1) % MAX_PARTICLES
+	_pp[i] = pos; _pz[i] = z; _pv[i] = vel; _pvz[i] = vz; _pl[i] = life; _pml[i] = life; _ps[i] = size; _pc[i] = col
+	_psq[i] = 1 if square else 0
 
 
 func _burst(pos: Vector2, z: float, n: int, speed: float, life: float, size: float, c: Color, dir := Vector2.ZERO, spread := PI, up := 2.0, square := false) -> void:
@@ -260,23 +277,26 @@ func _process(real_dt: float) -> void:
 	var damp := pow(0.03, dt)
 	if dt > 0.0:
 		var k := dt * 60.0
-		var i := 0
-		while i < _p.size():
-			var q: Array = _p[i]
-			q[4] -= dt
-			if q[4] <= 0.0:
-				_p.remove_at(i)
+		var map := world.map
+		_active = 0
+		for i in MAX_PARTICLES:
+			if _pl[i] <= 0.0:
 				continue
-			q[0] += q[2] * k
-			q[3] -= PGRAV * k
-			q[1] += q[3] * k
-			var g := world.map.ground_at(q[0].x, q[0].y)
-			if g > -1000 and q[1] < g:
-				q[1] = float(g)
-				q[3] *= -0.35
-				q[2] *= 0.6
-			q[2] *= damp
-			i += 1
+			_pl[i] -= dt
+			if _pl[i] <= 0.0:
+				continue
+			_active += 1
+			var p := _pp[i] + _pv[i] * k
+			_pp[i] = p
+			_pvz[i] -= PGRAV * k
+			var zz := _pz[i] + _pvz[i] * k
+			var g := map.ground_at(p.x, p.y)
+			if g > -1000 and zz < g:
+				zz = g
+				_pvz[i] *= -0.35
+				_pv[i] *= 0.6
+			_pz[i] = zz
+			_pv[i] *= damp
 		for r in _rings:
 			r[4] -= dt
 			r[2] += (r[3] - r[2]) * minf(1.0, dt * 9.0)
@@ -315,15 +335,23 @@ func _draw() -> void:
 	for r in _rings:
 		var k := minf(1.0, r[4] * 2.5)
 		Draw25.ground_ring(self, View.to_world(r[0], r[1]), r[2], Color(r[5], k), 2.5)
-	for q in _p:
-		var k: float = q[4] / q[5]
-		var at := View.to_world(q[0], q[1] + 2.0)
-		var col: Color = q[7]
-		if q[8]:
-			var s: float = q[6] * (1.0 if k > 0.5 else 0.6) * 1.5
-			Draw25.upright_rect(self, at, s, Color(col, k))
+	# particles glow upright: one counter-scaled transform for all of them
+	var gk := View.ground_k
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, View.upright()))
+	for i in MAX_PARTICLES:
+		var l := _pl[i]
+		if l <= 0.0:
+			continue
+		var kk := l / _pml[i]
+		var w := View.to_world(_pp[i], _pz[i] + 2.0)
+		var at := Vector2(w.x, w.y * gk)
+		var col := Color(_pc[i], kk)
+		if _psq[i]:
+			var sz := _ps[i] * (1.0 if kk > 0.5 else 0.6) * 1.5
+			draw_rect(Rect2(at.x - sz, at.y - sz, sz * 2.0, sz * 2.0), col)
 		else:
-			Draw25.upright_circle(self, at, q[6] * (0.4 + k * 0.6), Color(col, k))
+			Draw25.dot(self, at, _ps[i] * (0.4 + kk * 0.6), col)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## slash crescents: a pixel crescent on the ground that traces exactly the hitbox's sweep,

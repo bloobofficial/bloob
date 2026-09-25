@@ -422,18 +422,24 @@ func move(s: float) -> void:
 	if near and not absolute:
 		var sep := Vector2.ZERO
 		var checks := 0
-		for o: Enemy in world.neighbours(position):
-			if o == self or not o.alive or absf(o.z - z) > 24.0:
-				continue
-			var od := position - o.position
-			var rr := radius + o.radius + 2.0
-			var od2 := od.length_squared()
-			if od2 < rr * rr and od2 > 0.0001:
-				var odl := sqrt(od2)
-				sep += od / odl * ((rr - odl) / rr)
-			checks += 1
-			if checks >= 10:
-				break
+		var gcx := floori(position.x / Tuning.CELL)
+		var gcy := floori(position.y / Tuning.CELL)
+		for oy in range(-1, 2):
+			for ox in range(-1, 2):
+				if checks >= 10:
+					break
+				for o: Enemy in world.grid_at(gcx + ox, gcy + oy):
+					if o == self or not o.alive or absf(o.z - z) > 24.0:
+						continue
+					var od := position - o.position
+					var rr := radius + o.radius + 2.0
+					var od2 := od.length_squared()
+					if od2 < rr * rr and od2 > 0.0001:
+						var odl := sqrt(od2)
+						sep += od / odl * ((rr - odl) / rr)
+					checks += 1
+					if checks >= 10:
+						break   # hard cap per enemy, like the prototype
 		t += sep * 1.6
 
 	# integrate

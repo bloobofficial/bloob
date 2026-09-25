@@ -384,6 +384,14 @@ func _build_grid() -> void:
 		_grid[key].append(e)
 
 
+const _EMPTY: Array = []
+
+
+## the enemies in one grid cell (shared array: don't modify)
+func grid_at(cx: int, cy: int) -> Array:
+	return _grid.get(Vector2i(cx, cy), _EMPTY)
+
+
 ## enemies in the 3x3 cells around a point
 func neighbours(p: Vector2) -> Array:
 	var out := []
