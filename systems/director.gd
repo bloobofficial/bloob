@@ -79,7 +79,7 @@ static func _roll_attributes(world: World, e: Enemy) -> void:
 			chance = minf(Tuning.ELITE_MAX, tier.elite_chance + Tuning.ELITE_PER_LEVEL * (lvl - 1))
 		else:
 			chance = minf(Tuning.CHAMPION_MAX_CHANCE, Tuning.CHAMPION_BASE_CHANCE + Tuning.CHAMPION_PER_LVL * (lvl - 1))
-		if kind != 5 and rng.chance(chance):
+		if not e.is_brute() and rng.chance(chance):
 			champ = true
 			var n := 2 if rng.chance(tier.two_affix_chance) else 1
 			for k in n:
@@ -178,7 +178,7 @@ static func spawn_squad(world: World) -> void:
 static func run(world: World) -> void:
 	var enc := world.encounter
 	var dev := world.dev
-	if enc == null or world.time.frozen() or not dev.director:
+	if enc == null or world.phase != World.Phase.COMBAT or world.time.frozen() or not dev.director:
 		return
 	var m := world.mode
 	var t := world.room_tick / 60.0

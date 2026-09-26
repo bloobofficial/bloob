@@ -17,7 +17,26 @@ func _draw() -> void:
 	var now := Time.get_ticks_msec()
 	var pulse := 0.5 + 0.5 * sin(now * 0.004)
 	var C := float(Tuning.CELL)
+	var font := ThemeDB.fallback_font
 	for d in map.doors:
+		var link = world.room.doors.get(d.id)
+		if world.in_run() and link == null:
+			# the way you came in: shut behind you
+			for c in d.cells:
+				var p := Vector2((c % map.w + 0.5) * C, (c / map.w + 0.5) * C)
+				var at := View.to_world(p, float(map.height[c]))
+				draw_rect(Rect2(at.x - C * 0.45, at.y - C * 0.45, C * 0.9, C * 0.9), Color(0.1, 0.09, 0.12, 0.55))
+			continue
+		if world.in_run() and world.doors_open:
+			# what lies beyond: a label floating over the passage
+			var to: RoomData = world.rooms[world.room_index_of(link[0])]
+			var col: Color = WorldMapView.KIND_COLORS.get(to.kind, Color.WHITE)
+			var text := RunPlan.describe(to)
+			var top := View.to_world(Vector2(d.cx, d.cy), float(map.ground_at(d.cx, d.cy)) + 70.0 + pulse * 4.0)
+			draw_set_transform(top, 0.0, Vector2(1.0, View.upright()))
+			draw_string_outline(font, Vector2(-120, 0), text, HORIZONTAL_ALIGNMENT_CENTER, 240, 13, 4, Color(0, 0, 0, 0.8))
+			draw_string(font, Vector2(-120, 0), text, HORIZONTAL_ALIGNMENT_CENTER, 240, 13, Color(col, 1.0).lightened(0.35))
+			draw_set_transform(Vector2.ZERO)
 		for c in d.cells:
 			var p := Vector2((c % map.w + 0.5) * C, (c / map.w + 0.5) * C)
 			var gz := float(map.height[c])

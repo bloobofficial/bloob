@@ -95,6 +95,8 @@ const ENTER_TICKS := 12
 enum Res { ICHOR, BONE, WISP, SHARD }
 const RES_COUNT := 4
 const PICKUP_HEAL := 4             ## pickup type for health orbs
+const PICKUP_ESSENCE := 5          ## pickup type for Essence (runs)
+const ESSENCE_COLOR := Color(0.72, 0.5, 1.0)
 const RES_NAMES := ["Ichor", "Bone", "Wisp", "Relic Shard"]
 const RES_COLORS := [Color(0.98, 0.78, 0.32), Color(0.93, 0.9, 0.8), Color(0.55, 0.85, 1.0), Color(1.0, 0.42, 0.62)]
 const RES_DESC := [
@@ -175,6 +177,8 @@ static func xp_to_next(level: int) -> int:
 static func res_color(t: int) -> Color:
 	if t == PICKUP_HEAL:
 		return Color(0.45, 1, 0.5)
+	if t == PICKUP_ESSENCE:
+		return ESSENCE_COLOR
 	return RES_COLORS[clampi(t, 0, 3)]
 
 

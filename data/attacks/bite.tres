@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = "bite"
+name = "Bite"
+kind = 4
+range = 52.0
+windup = 24
+active = 3
+recover = 36
+cooldown = Vector2i(90, 150)
+damage = 9.0
+speed = 2.2
+radius = 0.0
+heavy = false
+arc = 0.8

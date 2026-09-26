@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LayoutTemplate" format=3]
+
+[ext_resource type="Script" path="res://resources/layout_template.gd" id="1_lay"]
+
+[resource]
+script = ExtResource("1_lay")
+id = "branch"
+shape = "BRANCH"
+names = PackedStringArray("Forked Hollow", "Split Path")
+rows = PackedStringArray("#######A#######", "######.=.######", "####...=...####", "###.*..=..*.###", "##..=======..##", "##..=#####=..##", "#$.n=#1g1#=..h#", "##.*=#111#=*.##", "##..=##^##=..##", "##..=.....=..##", "##..=======..##", "###.o..=..o.###", "####...=...####", "#####..=..#####", "D====..=..====B", "######.=.######", "#######C#######")

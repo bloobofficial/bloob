@@ -37,3 +37,13 @@ enum Route { DIRECT, LEFT, RIGHT, AROUND }
 @export var sprite_scale := 0.46      ## world units per atlas pixel (96 px cell)
 @export var anchor := 0.06            ## feet line, fraction of the frame from the bottom
 @export var hover := 0.0              ## float above the ground (flyers)
+@export_group("Run")
+@export var art := ""                 ## atlas id to draw it with ("" = its own id)
+@export var keep_dist := 0.0          ## ranged: hold this far from Bloob, back off when rushed
+@export var poise := false            ## brute-like: shrugs off knockback and stagger
+@export var essence := 2              ## Essence dropped on death (runs)
+@export var boss := false             ## attacks cycle through `attacks` in order
+
+
+func art_id() -> String:
+	return art if art != "" else id

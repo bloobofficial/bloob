@@ -63,6 +63,7 @@ func _build_pixel_frames() -> void:
 	_put_image("weapon.spear", PixelArt.spear().to_image(2))
 	_put_image("weapon.hammer", PixelArt.hammer().to_image(3))
 	_put_image("weapon.daggers", PixelArt.fang().to_image(4))
+	_put_image("weapon.staff", PixelArt.staff().to_image(2))
 
 
 func _bake_vectors() -> void:

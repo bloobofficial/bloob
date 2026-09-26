@@ -32,28 +32,28 @@ func _update() -> void:
 	var tick := e.world.tick_n
 	var st := e.state
 	var p := e.world.player
-	var fname := "%s.walk.%d" % [d.id, ((tick >> 3) + e.get_instance_id()) & 3]
-	var tint := Color(1, 1, 1)
+	var fname := "%s.walk.%d" % [d.art_id(), ((tick >> 3) + e.get_instance_id()) & 3]
+	var tint := Color(1, 1, 1) if d.art == "" else d.color.lerp(Color.WHITE, 0.25 if d.boss else 0.55)
 	var flash := 0.0
 	var sw := 1.0
 	var sh := 1.0
 	if st == Enemy.St.WINDUP:
-		fname = d.id + ".windup.0"
+		fname = d.art_id() + ".windup.0"
 		var t := 1.0 - float(e.timer) / maxf(1.0, e.wtot)
 		flash = (sin(t * t * 40.0) * 0.5 + 0.5) * 0.55
 		sw = 1.0 + t * 0.08
 		sh = 1.0 - t * 0.06
 	elif st == Enemy.St.LUNGE or (st == Enemy.St.COMMIT and e.position.distance_squared_to(p.position) < 70.0 * 70.0):
-		fname = d.id + ".attack.0"
+		fname = d.art_id() + ".attack.0"
 		sw = 1.1
 		sh = 0.94
 	elif st == Enemy.St.STAGGER:
-		fname = d.id + ".hurt.0"
+		fname = d.art_id() + ".hurt.0"
 		tint = Color(0.75, 0.88, 1.0)
 	elif st == Enemy.St.RECOVER:
 		tint = Color(0.6, 0.6, 0.6)
 	if e.flash > 0 or e.freeze > 0:
-		fname = d.id + ".hurt.0"
+		fname = d.art_id() + ".hurt.0"
 		flash = 0.85
 		sw = 1.14
 		sh = 0.88

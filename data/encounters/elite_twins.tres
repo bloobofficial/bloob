@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://resources/encounter_def.gd" id="1_enc"]
+
+[resource]
+script = ExtResource("1_enc")
+id = "elite_twins"
+kind = "elite"
+tier = 3
+waves = Array[PackedStringArray]([PackedStringArray("chaser", "chaser"), PackedStringArray("rammer", "rammer", "spitter")])
+extra_pool = PackedStringArray()
+extra = 0
+champions = 2
+essence = Vector2i(24, 32)

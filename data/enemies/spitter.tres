@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+[ext_resource type="Resource" path="res://data/attacks/spit.tres" id="2_a"]
+[ext_resource type="Resource" path="res://data/attacks/spray.tres" id="3_a"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="9_kind"]
+
+[resource]
+script = ExtResource("9_kind")
+id = "spitter"
+name = "Spitter"
+kind_index = 8
+color = Color(0.78, 0.9, 0.35, 1)
+radius = 7.0
+hp = 11.0
+speed = 1.55
+attacks = Array[ExtResource("1_atk")]([ExtResource("2_a"), ExtResource("3_a")])
+attack_weights = PackedFloat32Array(3, 1)
+art = "weaver"
+keep_dist = 200.0
+essence = 2
+kill_xp = 5
+sprite_scale = 0.44
+loot_heal_chance = 0.2

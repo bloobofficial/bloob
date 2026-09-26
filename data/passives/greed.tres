@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PassiveData" format=3]
+
+[ext_resource type="Script" path="res://resources/passive_data.gd" id="1_pas"]
+
+[resource]
+script = ExtResource("1_pas")
+id = "greed"
+name = "Greed"
+desc = "+30% Essence from every source"
+stat = "essence"
+amount = 0.3
+color = Color(0.8, 0.55, 1, 1)

@@ -31,6 +31,10 @@ enum Shape { ARC, THRUST, SMASH, RING }
 @export var vis_to := 0.0        ## blade angle at the end of the active frames
 @export var vis_lift := 0.0      ## 0 = blade along the ground, 1 = raised straight up
 @export var vis_thrust := 0.0    ## weapon pushes forward this far during the active frames
+@export var bolt_damage := 0.0   ## > 0: the swing also throws a bolt (costs the weapon's mana_cost)
+@export var bolt_speed := 9.0
+@export var bolt_shots := 1
+@export var bolt_spread := 0.0
 
 
 func shape() -> Shape:
@@ -64,3 +68,18 @@ func tip_at(k: float) -> float:
 
 func total_ticks() -> int:
 	return windup + active + recover
+
+
+## A copy with Bloob's modifiers applied: faster wind-ups / follow-throughs, longer reach.
+## The active frames keep their length so the hitbox still traces the drawn sweep.
+func scaled(speed: float, reach: float) -> SwingData:
+	if speed == 1.0 and reach == 1.0:
+		return self
+	var s := duplicate() as SwingData
+	s.windup = maxi(1, roundi(windup / speed))
+	s.recover = maxi(2, roundi(recover / speed))
+	s.chain_from = chain_from if chain_from >= 99 else maxi(1, roundi(chain_from / speed))
+	s.range = range * reach
+	s.impact = impact * reach
+	s.vis_thrust = vis_thrust * reach
+	return s

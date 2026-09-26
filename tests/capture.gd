@@ -39,6 +39,10 @@ func _run() -> void:
 		get_tree().quit()
 		return
 	main.begin()
+	if scenario == "run":
+		await _run_tour(main, int(room), dir)
+		get_tree().quit()
+		return
 	main.restart(room)
 	await _frames(40)
 	var world: World = main.world
@@ -115,3 +119,56 @@ func _run() -> void:
 		_:
 			await _shot(dir, room)
 	get_tree().quit()
+
+
+## "run" scenario: walk a whole run (seed = the room argument) and shoot every room:
+## godot res://tests/capture.tscn -- <seed> <out dir> run
+func _run_tour(main: Node, seed_value: int, dir: String) -> void:
+	main.restart("", seed_value)
+	var world: World = main.world
+	await _frames(40)
+	await _shot(dir, "run_00_start")
+	world.player.god = true
+	for i in range(1, world.rooms.size()):
+		var r := world.rooms[i]
+		world.load_room(i, r.entrance)
+		world.player.god = true
+		await _frames(30)
+		var tag := "run_%02d_%s" % [i, r.kind]
+		if r.encounter:
+			Waves.engage(world)
+			await _ticks(40)
+			await _shot(dir, tag + "_tell")
+			await _ticks(100)
+			await _shot(dir, tag + "_fight")
+			if r.kind == "boss":
+				await _ticks(150)
+				await _shot(dir, tag + "_fight2")
+			var guard := 0
+			while not world.doors_open and guard < 80:
+				for e in world.enemies.duplicate():
+					CombatRules.kill_enemy(world, e, false)
+				await _frames(20)
+				guard += 1
+			await _frames(50)
+			await _shot(dir, tag + "_cleared")
+		else:
+			await _shot(dir, tag)
+		if r.kind == "altar" or r.kind == "elite":
+			main.altar.open()
+			await _frames(10)
+			await _shot(dir, tag + "_altar")
+			main.altar.close()
+	await _frames(60)
+	await _shot(dir, "run_99_end")
+	world.running = true
+	world.player.god = false
+	main._end_shown = false
+	world.player.hurt(9999, world.player.position + Vector2(10, 0))
+	await _frames(90)
+	await _shot(dir, "run_99_death")
+
+
+func _ticks(n: int) -> void:
+	for i in n:
+		await get_tree().physics_frame

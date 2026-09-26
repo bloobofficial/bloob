@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomData" format=3]
+
+[ext_resource type="Script" path="res://resources/room_data.gd" id="1_room"]
+[ext_resource type="Resource" path="res://data/themes/barrow.tres" id="2_theme"]
+
+[resource]
+script = ExtResource("1_room")
+id = "arena"
+name = "Barrow Throne"
+kind = "boss"
+blurb = "A ring of standing stones. Something old sits at its heart."
+on_map = false
+theme = ExtResource("2_theme")
+layout = PackedStringArray("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", "TTTTTTTTTTT..T.TTTTTT.T..TTTTTTTTTTT", "TTTTTTTT......................TTTTTT", "TTTTTT..........................TTTT", "TTTTT....##..............##......TTT", "TTTT.....##......*.......##.......TT", "TTTT..............................TT", "TTT...............................TT", "TTT.......*.............*.........TT", "TTT..............................TTT", "TTT.......##....,,,,....##........TT", "TTT.......##....,,,,....##........TT", "TTT...............................TT", "TTT.......*.............*.........TT", "TTTT..............................TT", "TTTT..............................TT", "TTTTT....##..............##......TTT", "TTTTT....##..............##......TTT", "TTTTTT..........................TTTT", "TTTTTTT.........,,,,..........TTTTTT", "TTTTTTTTT.......,,,,.......TTTTTTTTT", "TTTTTTTTTtt.t.tt,,,,tt.t.ttTTTTTTTTT", "TTTTTTTTTTTTTTTTCCCCTTTTTTTTTTTTTTTT")

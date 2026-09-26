@@ -57,6 +57,21 @@ func _process(_delta: float) -> void:
 			prop.offset = Vector2(0, -(0.5 - PlayerVisual.ANCHOR) * 96.0)
 			prop.modulate = npc.tint if npc else Color.WHITE
 			prop.flip_h = world.player.position.x < position.x
+		World.StationKind.ALTAR:
+			_set_prop("prop.shrine", 0.66)
+			prop.modulate = Color(0.85, 0.7, 1.2) if data.active else Color(0.45, 0.45, 0.5)
+		World.StationKind.OFFER:
+			var o: Dictionary = data.get("offer", {sold = true, type = ""})
+			_set_prop("prop.rack", 0.56)
+			prop.modulate = Color(0.5, 0.5, 0.55) if o.sold else Color.WHITE
+			if not o.sold and o.type == "weapon":
+				var wd: WeaponData = Content.weapons[o.ref]
+				_set_item(wd, minf(0.5, wd.art_scale * 0.8), 34.0 + bob, sin(now * 0.0015 + data.slot) * 0.25, 0.0)
+		World.StationKind.DROP:
+			prop.visible = false
+			if data.active:
+				var wd: WeaponData = Content.weapons[data.ref]
+				_set_item(wd, wd.art_scale * 0.9, 18.0 + bob, sin(now * 0.0012) * 0.5, 0.1)
 		World.StationKind.REWARD:
 			prop.visible = false
 			if data.active:
@@ -91,7 +106,7 @@ func _draw() -> void:
 	var kind: int = data.kind
 	if kind == World.StationKind.NPC:
 		Draw25.ground_ellipse(self, feet, Player.R * 1.4 * 1.25, Player.R * 1.4 * 0.8, Color(0, 0, 0, 0.4))
-	elif kind != World.StationKind.REWARD:
+	elif kind != World.StationKind.REWARD and kind != World.StationKind.DROP:
 		Draw25.ground_ellipse(self, feet + Vector2(0, 4), 22.0 * 1.3, 22.0 * 0.7, Color(0, 0, 0, 0.35))
 	var near: bool = world.running and world.nearest_station(world.player.position) == world.stations.find(data)
 	if near:
@@ -109,6 +124,24 @@ func _draw() -> void:
 			var c := Color(1, 0.85, 0.4) if held else (Color(0.55, 1, 0.65) if owned else wd.fx_glow)
 			Draw25.ground_ring(self, feet, 22, Color(c, 0.8 if held else (0.55 if owned else 0.3)), 2.0)
 			Draw25.upright_circle(self, Vector2(0, View.lift(z + 50)), 14, Color(c, 0.1))
+		World.StationKind.ALTAR:
+			if data.active:
+				Draw25.upright_circle(self, Vector2(0, View.lift(z + 50)), 18 + pulse * 4, Color(0.75, 0.5, 1, 0.2))
+				Draw25.ground_ring(self, feet, 30 + pulse * 4, Color(0.8, 0.55, 1, 0.6), 2.0)
+		World.StationKind.OFFER:
+			var o: Dictionary = data.get("offer", {sold = true, type = ""})
+			if not o.sold:
+				Draw25.ground_ring(self, feet, 22, Color(Tuning.ESSENCE_COLOR, 0.6), 2.0)
+				if o.type != "weapon":
+					var c := Color(0.45, 1, 0.5) if o.type == "heal" else Content.passive(o.ref).color
+					var orb := Vector2(0, View.lift(z + 40 + sin(now * 0.003 + data.ref) * 3.0))
+					Draw25.upright_circle(self, orb, 12 + pulse * 2, Color(c, 0.2))
+					Draw25.upright_circle(self, orb, 6, Color(c, 0.95))
+		World.StationKind.DROP:
+			if data.active:
+				var c: Color = Content.weapons[data.ref].fx_heavy_glow
+				Draw25.ground_ring(self, feet, 18 + pulse * 4, Color(c, 0.6), 2.0)
+				Draw25.ground_circle(self, feet, 10, Color(c, 0.2))
 		World.StationKind.REWARD:
 			if data.active:
 				var c: Color = Content.weapons[data.ref].fx_heavy_glow

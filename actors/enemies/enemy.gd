@@ -55,13 +55,15 @@ var size := 1.0                  ## visual scale
 var leap := false
 var struck := false              ## this attack already connected
 var target := Vector2.ZERO       ## locked target point (leaps)
+var pattern_i := 0               ## bosses: the next attack in their cycle
+var enraged := false             ## bosses: below half health they press harder
 var _nav := {}
 
 @onready var visual: EnemyVisual = $Visual
 
 
 func is_brute() -> bool:
-	return kind == 5
+	return kind == 5 or data.poise
 
 
 ## match the collision footprint to the rolled radius
@@ -180,6 +182,9 @@ func _route_anchor() -> int:
 
 ## Try to start this enemy's attack. Returns true if it began winding up.
 func try_attack(dist: float) -> bool:
+	if data.boss and not data.attacks.is_empty():
+		# bosses don't roll: they cycle (swing, charge, slam, and a long breath after the slam)
+		atk = data.attacks[pattern_i % data.attacks.size()]
 	if atk == null or cd > 0 or world.dev.passive:
 		return false
 	if dist > atk.range:
@@ -187,8 +192,10 @@ func try_attack(dist: float) -> bool:
 	var p := world.player
 	if p.dead or absf(p.z - z) > 30.0:
 		return false
-	var frenzy := (affix & Tuning.Affix.FRENZIED) != 0
+	var frenzy := (affix & Tuning.Affix.FRENZIED) != 0 or enraged
 	var w := maxi(8, roundi(atk.windup * (0.75 if frenzy else 1.0)))
+	if data.boss:
+		pattern_i += 1
 	state = St.WINDUP
 	timer = w
 	wtot = w
@@ -379,6 +386,11 @@ func move(s: float) -> void:
 					var err := clampf((dist - space) / 40.0, -1.0, 1.0)
 					t = Vector2(-u.y * orbit_dir * 0.85 + u.x * err, u.x * orbit_dir * 0.85 + u.y * err)
 					mul = 0.72
+			if data.keep_dist > 0.0 and dist < data.keep_dist + 90.0:
+				# ranged: hold its distance and strafe; when Bloob rushes in, back off quickly
+				var err := clampf((dist - data.keep_dist) / 60.0, -1.0, 1.0)
+				t = Vector2(u.x * err - u.y * orbit_dir * 0.7, u.y * err + u.x * orbit_dir * 0.7)
+				mul = 1.3 if dist < data.keep_dist * 0.6 else 0.8
 		St.ORBIT:
 			var err := clampf((dist - data.orbit_radius) / data.orbit_radius * 2.5, -1.0, 1.0)
 			t = Vector2(-u.y * orbit_dir + u.x * err, u.x * orbit_dir + u.y * err)
@@ -475,6 +487,8 @@ func move(s: float) -> void:
 			return
 	elif res[0]:
 		knock *= 0.5   # skid along the wall instead of stopping dead
+		if data.keep_dist > 0.0 and state == St.APPROACH and world.rng.chance(0.08):
+			orbit_dir = -orbit_dir   # backed into a wall: strafe the other way
 	knock *= damp
 
 	# ---- height: stairs, drops, knock-ups, falling off the island ----

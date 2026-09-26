@@ -72,7 +72,7 @@ func run(line: String) -> void:
 		return args[i] in ["on", "1", "true", "yes"]
 	match c:
 		"help", "?":
-			log_line("spawn <kind 0-5 or name> [count] [champ] [affix]\nkill · clear · doors open|close · director on|off\nrate <x> · max <n|room> · budget <n|endless|room> · threat <n>\nchamp <pct|auto> · patterns on|off|auto · freeze · passive\nespeed <x> · edmg <x> · ehp <x> · god · nocd · flask · dmg <x>\nheal · level <n> · give <res 0-3|all> <n> · techs [reset]\nweapon <id> · weapons · tp (to the cursor) · room <id> · newrun <id>\nforget · speed <x> · pause · step <n> · hitbox · states · perf · cls")
+			log_line("spawn <kind 0-5 or name> [count] [champ] [affix]\nkill · clear · doors open|close · director on|off\nrate <x> · max <n|room> · budget <n|endless|room> · threat <n>\nchamp <pct|auto> · patterns on|off|auto · freeze · passive\nespeed <x> · edmg <x> · ehp <x> · god · nocd · flask · dmg <x>\nheal · level <n> · give <res 0-3|all> <n> · techs [reset]\nweapon <id> · weapons · tp (to the cursor) · room <id> · newrun <id>\nrun [seed] · rooms · next · essence <n> · skill <id>\nforget · speed <x> · pause · step <n> · hitbox · states · perf · cls")
 		"spawn":
 			var kind := 0
 			if args.size() > 0:
@@ -160,10 +160,29 @@ func run(line: String) -> void:
 			world.player.place(at, world.map.ground_at(at.x, at.y))
 		"room":
 			if args.size() > 0:
-				world.load_room(Content.room_index(args[0]), "")
+				world.load_room(world.room_index_of(args[0]), "C" if world.in_run() else "")
+				main.snap_camera()
+		"rooms":
+			for i in world.rooms.size():
+				log_line("%d  %s  [color=#9a93a8]%s[/color]" % [i, world.rooms[i].id, world.rooms[i].name])
+		"next":
+			# jump to the first way onward from this room (runs)
+			var ways := world.room.doors.values()
+			if ways.size() > 0:
+				world.load_room(world.room_index_of(ways[0][0]), ways[0][1])
 				main.snap_camera()
 		"newrun":
 			main.restart(args[0] if args.size() > 0 else Content.START_ROOM)
+		"run":
+			main.restart("", int(args[0]) if args.size() > 0 and args[0].is_valid_int() else -1)
+			log_line("Run seed %d" % world.run.seed_value)
+		"essence":
+			GameState.add_essence(int(num.call(0, 50)))
+		"skill":
+			if args.size() > 0 and Content.passive(args[0]) != null:
+				world.take_passive(args[0])
+			else:
+				log_line(", ".join(Content.passives.map(func(p): return p.id)))
 		"forget":
 			for st in GameState.room_states:
 				st.cleared = false

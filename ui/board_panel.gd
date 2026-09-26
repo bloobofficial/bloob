@@ -21,8 +21,8 @@ func _process(_delta: float) -> void:
 func refresh() -> void:
 	var combat := []
 	var mapped := []
-	for i in Content.rooms.size():
-		var r := Content.rooms[i]
+	for i in world.rooms.size():
+		var r := world.rooms[i]
 		if r.on_map:
 			mapped.append(i)
 			if r.encounter:

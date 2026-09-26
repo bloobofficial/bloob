@@ -11,10 +11,18 @@ extends Node2D
 ## Coordinates: node positions are ground-plane world units; heights are each actor's `z`.
 
 signal room_loaded(index: int)
-signal station_opened(kind: int)          ## 1 Shrine, 2 notice board
+signal station_opened(kind: int)          ## 1 Shrine, 2 notice board, 3 altar
 signal talk(npc_index: int, line: String, at: Vector3)
+signal run_won
 
-enum StationKind { SHRINE = 1, WELL, RACK, NPC, BOARD, CACHE, REWARD }
+enum StationKind { SHRINE = 1, WELL, RACK, NPC, BOARD, CACHE, REWARD, ALTAR, OFFER, DROP }
+## A room's life: nothing yet -> Bloob walked in -> the fight is on (exits sealed) -> cleared.
+## Safe rooms are CLEARED from the start. Cleared rooms stay cleared.
+enum Phase { INACTIVE, ENTERED, COMBAT, CLEARED }
+
+## how far into a run room Bloob walks (or how long he waits) before its fight starts
+const ENGAGE_DIST := 110.0
+const ENGAGE_TICKS := 75
 
 const ENEMY_SCENE := preload("res://actors/enemies/enemy.tscn")
 const PICKUP_SCENE := preload("res://systems/pickup.tscn")
@@ -54,6 +62,15 @@ var totems: Array[Totem] = []
 ## [{kind, pos: Vector2, z, ref, slot, active, node}]
 var stations: Array[Dictionary] = []
 
+## the rooms this run can visit: the hub world, or a generated run's (see RunPlan)
+var rooms: Array[RoomData] = []
+var run: RunPlan = null            ## null = the open hub world (dev / legacy)
+var phase: Phase = Phase.INACTIVE
+var engage_t := 0
+var arrive_at := Vector2.ZERO
+var wave := 0                      ## run fights: which wave is out
+var pending: Array[Dictionary] = []   ## spawns being telegraphed: [{kind, pos, z, t, champ}]
+var run_over := false
 var room: RoomData
 var room_idx := 0
 var encounter: EncounterData
@@ -99,19 +116,48 @@ func _ready() -> void:
 
 ## Fresh run: new seed, every room forgotten, start in room_id.
 func reset_run(room_id: String = Content.START_ROOM, seed_value: int = -1) -> void:
+	run = null
+	rooms = Content.rooms
+	_reset_common(seed_value)
+	load_room(Content.room_index(room_id), "")
+
+
+## A fresh run of the run loop: a new map from the seed (random if -1), starting in its first room.
+func start_run(seed_value: int = -1) -> void:
+	var s := seed_value if seed_value >= 0 else randi() % 1000000
+	run = RunPlan.build(s)
+	rooms = run.rooms
+	_reset_common(s)
+	load_room(0, "")
+
+
+func _reset_common(seed_value: int) -> void:
 	rng = Rng.new(seed_value if seed_value >= 0 else randi())
-	GameState.reset()
+	GameState.reset(rooms)
 	time.reset()
 	dev = DevState.new()
 	god_override = false
+	run_over = false
 	tick_n = 0
 	player.reset_state()
-	load_room(Content.room_index(room_id), "")
+	GameState.weapons_used = PackedStringArray([GameState.weapon_data().name])
+
+
+func room_index_of(id: String) -> int:
+	for i in rooms.size():
+		if rooms[i].id == id:
+			return i
+	push_error("Unknown room: " + id)
+	return 0
+
+
+func in_run() -> bool:
+	return run != null
 
 
 ## Enter a room, arriving through door `via_door` (or at its start marker).
 func load_room(idx: int, via_door: String) -> void:
-	var def := Content.rooms[idx]
+	var def := rooms[idx]
 	room_idx = idx
 	room = def
 	map.load_room(def)
@@ -148,6 +194,14 @@ func load_room(idx: int, via_door: String) -> void:
 	if not active:
 		encounter = null
 	doors_open = not active or budget() == 0
+	wave = 0
+	pending.clear()
+	engage_t = 0
+	# hub rooms fight the moment you arrive; run rooms wait until you step in
+	if not active:
+		phase = Phase.CLEARED
+	else:
+		phase = Phase.ENTERED if run else Phase.COMBAT
 	threat = mini(20, def.encounter.tier + GameState.rooms_cleared / 2) if def.encounter else 1
 	diff = Content.tier_of(def.encounter.tier if def.encounter else 1)
 	# each visit re-weights the spawn mix, so the same room plays differently
@@ -171,7 +225,12 @@ func load_room(idx: int, via_door: String) -> void:
 		if not d.is_empty():
 			arrive = Vector2(d.in_x, d.in_y)
 	player.place(arrive, map.ground_at(arrive.x, arrive.y))
+	arrive_at = arrive
 	player.god = mode.god_mode or god_override or dev.god
+	# the run's first room: a weapon lies next to you
+	if run and idx == 0 and run.start_weapon >= 0 and not (int(st.taken) & 1 << 30):
+		st.taken = int(st.taken) | 1 << 30
+		add_station(StationKind.DROP, free_spot(arrive + Vector2(70, -40)), run.start_weapon)
 	# stress-test sprayers (proto-towers)
 	var n_em := mini(mode.emitters, 16) if encounter else 0
 	for i in n_em:
@@ -185,9 +244,25 @@ func load_room(idx: int, via_door: String) -> void:
 	_update_field_goals()
 	GameState.changed.emit()
 	Events.push(Ev.ROOM_ENTER, arrive.x, arrive.y, idx, 0, player.z)
-	if active and not doors_open:
+	if active and not doors_open and phase == Phase.COMBAT:
 		Events.push(Ev.DOORS_SEALED, arrive.x, arrive.y, 0, 0, player.z)
 	room_loaded.emit(idx)
+
+
+## the ground point nearest `p` Bloob could stand on (a cell centre)
+func free_spot(p: Vector2) -> Vector2:
+	if map.walkable(p.x, p.y) and map.door_at(p.x, p.y) == 0:
+		return p
+	var oc := map.nearest_open(p.x, p.y)
+	return Vector2((oc.x + 0.5) * Tuning.CELL, (oc.y + 0.5) * Tuning.CELL)
+
+
+## the room's reward spot ('R'), or the middle of the room
+func reward_spot() -> Vector2:
+	for m in map.markers:
+		if m.ch == "R":
+			return Vector2(m.x, m.y)
+	return free_spot(Vector2(map.px_w / 2.0, map.px_h / 2.0))
 
 
 func room_state() -> Dictionary:
@@ -208,12 +283,25 @@ func _build_stations(def: RoomData, st: Dictionary) -> void:
 		var active := true
 		var taken: bool = (int(st.taken) & (1 << slot)) != 0
 		match m.ch:
-			"S": kind = StationKind.SHRINE
-			"H": kind = StationKind.WELL
+			"S":
+				kind = StationKind.ALTAR if run else StationKind.SHRINE
+				active = not (run and taken)
+			"H":
+				kind = StationKind.WELL
+				active = not (run and taken)   # a run's well mends you once
+			"W" when run:
+				kind = StationKind.OFFER
+				ref = rack
+				active = rack < def.offers.size() and not def.offers[rack].sold
+				rack += 1
 			"W":
 				kind = StationKind.RACK
 				ref = maxi(0, Content.weapon_index(def.stands[rack] if rack < def.stands.size() else "paws"))
 				rack += 1
+			"R" when run:
+				kind = StationKind.DROP
+				ref = def.drop_weapon
+				active = ref >= 0 and not taken and (def.encounter == null or st.cleared)
 			"P":
 				kind = StationKind.NPC
 				ref = npc
@@ -227,11 +315,31 @@ func _build_stations(def: RoomData, st: Dictionary) -> void:
 				ref = Content.weapon_index(def.reward) if def.reward != "" else -1
 				active = ref >= 0 and not taken and (def.encounter == null or st.cleared)
 		var s := {kind = kind, pos = Vector2(m.x, m.y), z = float(m.z), ref = ref, slot = slot, active = active}
+		if kind == StationKind.OFFER and ref < def.offers.size():
+			s.offer = def.offers[ref]   # the ware itself (sold state lives on it)
 		var node: Station = STATION_SCENE.instantiate()
 		actors.add_child(node)
 		node.setup(self, s)
 		s.node = node
 		stations.append(s)
+
+
+## a station that isn't in the layout (weapons on the ground, an altar rising after a fight)
+func add_station(kind: int, pos: Vector2, ref: int) -> Dictionary:
+	var s := {kind = kind, pos = pos, z = float(map.ground_at(pos.x, pos.y)), ref = ref, slot = -1, active = true}
+	var node: Station = STATION_SCENE.instantiate()
+	actors.add_child(node)
+	node.setup(self, s)
+	s.node = node
+	stations.append(s)
+	return s
+
+
+func _take_slot(s: Dictionary) -> void:
+	s.active = false
+	if s.slot >= 0:
+		var st := room_state()
+		st.taken = int(st.taken) | (1 << s.slot)
 
 
 ## nearest usable station to a point, or -1
@@ -243,7 +351,7 @@ func nearest_station(p: Vector2) -> int:
 		if not s.active:
 			continue
 		var d := p.distance_to(s.pos)
-		var rng_r := Tuning.REWARD_RANGE if s.kind == StationKind.REWARD else Tuning.USE_RANGE
+		var rng_r := Tuning.REWARD_RANGE if s.kind == StationKind.REWARD or s.kind == StationKind.DROP else Tuning.USE_RANGE
 		if d <= rng_r and d < bd:
 			bd = d
 			best = k
@@ -276,7 +384,21 @@ func interact() -> void:
 			p.heal_left = 0.0
 			GameState.flask = GameState.flask_max
 			GameState.changed.emit()
+			if run:
+				_take_slot(s)
 			Events.push(Ev.WELL_USED, sx, sy, 0, 0, s.z)
+		StationKind.ALTAR:
+			Events.push(Ev.STATION_OPEN, sx, sy, 3, 0, s.z)
+			station_opened.emit(3)
+		StationKind.OFFER:
+			_buy_offer(s)
+		StationKind.DROP:
+			_swap_weapon(s)
+		StationKind.CACHE when run:
+			_take_slot(s)
+			var n := floori(rng.rangef(room.essence.x, room.essence.y + 0.999)) if room.essence != Vector2i.ZERO else 12
+			spill_essence(s.pos + Vector2(0, 20), s.z + 10.0, n)
+			Events.push(Ev.LOOT, sx, sy, 1, 0, s.z)
 		StationKind.NPC:
 			var npc_def: NpcData = room.npcs[s.ref] if s.ref < room.npcs.size() else null
 			Events.push(Ev.TALK, sx, sy, s.ref, GameState.talks, s.z)
@@ -323,10 +445,95 @@ func interact() -> void:
 		s.node.refresh()
 
 
+## Take the weapon on the ground; the one in hand drops where it lay (bare paws just stay paws).
+func _swap_weapon(s: Dictionary) -> void:
+	var w: int = s.ref
+	var old := GameState.weapon
+	GameState.weapons[w] = 1
+	Events.push(Ev.WEAPON_FOUND, s.pos.x, s.pos.y, w, 0, s.z)
+	equip(w)
+	if old > 0 and old != w:
+		s.ref = old
+		Events.push(Ev.ITEM_DROP, s.pos.x, s.pos.y, old, 0, s.z)
+	else:
+		_take_slot(s)
+
+
+## Shop: pay Essence for the ware on this pedestal.
+func _buy_offer(s: Dictionary) -> void:
+	var o: Dictionary = s.offer
+	var p := player
+	if o.sold:
+		return
+	if o.type == "heal" and p.hp >= p.max_hp:
+		Events.push(Ev.DENIED, s.pos.x, s.pos.y, 3, 0, s.z)
+		return
+	if not GameState.spend_essence(o.price):
+		Events.push(Ev.DENIED, s.pos.x, s.pos.y, 1, -1, s.z)
+		return
+	o.sold = true
+	_take_slot(s)
+	match o.type:
+		"weapon":
+			var old := GameState.weapon
+			GameState.weapons[o.ref] = 1
+			Events.push(Ev.WEAPON_FOUND, s.pos.x, s.pos.y, o.ref, 1, s.z)
+			equip(o.ref)
+			if old > 0 and old != o.ref:
+				add_station(StationKind.DROP, free_spot(p.position + Vector2(0, 40)), old)
+				Events.push(Ev.ITEM_DROP, p.position.x, p.position.y + 40, old, 0, p.z)
+		"skill":
+			take_passive(o.ref)
+		"heal":
+			p.hp = minf(p.max_hp, p.hp + p.max_hp * float(o.ref))
+			Events.push(Ev.WELL_USED, s.pos.x, s.pos.y, 1, 0, s.z)
+	Events.push(Ev.BOUGHT, s.pos.x, s.pos.y, o.price, 0, s.z)
+
+
+## Gain a passive: stats change now, extra max HP comes filled.
+func take_passive(id: String) -> void:
+	var gained := GameState.add_passive(id)
+	player.max_hp = GameState.max_hp
+	player.hp = minf(player.max_hp, player.hp + gained)
+	var p := player
+	Events.push(Ev.PASSIVE_GAINED, p.position.x, p.position.y, Content.passives.find(Content.passive(id)), 0, p.z)
+
+
+## Altar: take one of its offered passives; the altar goes dark.
+func choose_at_altar(choice: int) -> bool:
+	var k := -1
+	for i in stations.size():
+		if stations[i].kind == StationKind.ALTAR and stations[i].active:
+			k = i
+	var list := altar_choices()
+	if k < 0 or choice < 0 or choice >= list.size():
+		return false
+	_take_slot(stations[k])
+	stations[k].node.refresh()
+	take_passive(list[choice])
+	return true
+
+
+## what the room's altar offers (elite rooms raise one after the fight)
+func altar_choices() -> PackedStringArray:
+	return room.choices
+
+
+## Essence bursts out as orbs (a few big ones rather than dozens of small)
+func spill_essence(at: Vector2, z: float, total: int) -> void:
+	var pieces := clampi(total / 3, 1, 8)
+	for k in pieces:
+		var amt := total / pieces + (1 if k < total % pieces else 0)
+		if amt > 0:
+			spawn_pickup(at, z, Tuning.PICKUP_ESSENCE, amt)
+
+
 ## switch Bloob's weapon (drops any swing in progress)
 func equip(w: int) -> void:
 	if w < 0 or w >= Content.weapons.size():
 		return
+	if GameState.weapon != w:
+		GameState.weapons_used.append(Content.weapons[w].name)
 	GameState.weapon = w
 	player.melee.cancel()
 	player.melee.combo_cd = 0
@@ -429,8 +636,7 @@ func note_defeat() -> void:
 func spawn_pickup(at: Vector2, z: float, type: int, amount: int) -> void:
 	if pickups.size() >= Tuning.MAX_PICKUPS:
 		# cap reached: bank it directly so loot is never lost
-		if type != Tuning.PICKUP_HEAL:
-			GameState.add_res(type, amount)
+		GameState.bank(type, amount)
 		return
 	var pk: Pickup = PICKUP_SCENE.instantiate()
 	actors.add_child(pk)
@@ -493,6 +699,8 @@ func step(inp: InputFrame = null) -> void:
 	time.advance()                                   # 1. time / impact
 	if spawning:
 		Director.run(self)                           # 2. spawning
+	if run:
+		_run_phase()                                 # 2b. run rooms: engage, waves
 	var walking := exit_t > 0 or enter_t > 0
 	var f := inp if inp != null else player.read_input(walking)
 	if inp != null and walking:
@@ -542,6 +750,15 @@ func step(inp: InputFrame = null) -> void:
 			_take_door(exit_door)
 
 
+## Run rooms: a fight starts once Bloob has stepped in (or lingered), then its waves play out.
+func _run_phase() -> void:
+	if phase == Phase.ENTERED and not player.dead and enter_t == 0:
+		engage_t += 1
+		if engage_t >= ENGAGE_TICKS or player.position.distance_to(arrive_at) > ENGAGE_DIST:
+			Waves.engage(self)
+	Waves.tick(self)
+
+
 ## during a passage walk-out / walk-in Bloob just walks
 func auto_walk_dir() -> Vector2:
 	var d := exit_dir if exit_t > 0 else enter_dir
@@ -568,8 +785,8 @@ func _check_doors() -> void:
 		return
 	var id := String.chr(on)
 	var d := map.door_info(id)
-	if d.is_empty():
-		return
+	if d.is_empty() or not room.doors.has(id):
+		return   # the way you came in (runs are forward-only)
 	# walk out through the passage; the room changes when the walk ends
 	exit_door = id
 	exit_t = Tuning.EXIT_TICKS
@@ -582,7 +799,7 @@ func _take_door(id: String) -> void:
 	exit_door = ""
 	if link == null:
 		return
-	load_room(Content.room_index(link[0]), link[1])
+	load_room(room_index_of(link[0]), link[1])
 	var d := map.door_info(link[1])
 	if not d.is_empty():
 		# keep walking in from the passage for a moment
@@ -594,15 +811,22 @@ func _check_cleared() -> void:
 	var b := budget()
 	if encounter == null or b == 0 or doors_open:
 		return
-	if spawned >= b and enemies.is_empty():
+	if spawned >= b and enemies.is_empty() and pending.is_empty():
 		doors_open = true
+		phase = Phase.CLEARED
 		room_state().cleared = true
 		GameState.rooms_cleared += 1
 		var p := player
 		p.hp = minf(p.max_hp, p.hp + p.max_hp * Tuning.CLEAR_HEAL)
-		if mode.loot:
+		if run:
+			_run_reward()
+		elif mode.loot:
 			drop_chest()
 		Events.push(Ev.ROOM_CLEARED, p.position.x, p.position.y, 0, 0, p.z)
+		if run and room.kind == "boss":
+			run_over = true
+			Events.push(Ev.RUN_WON, p.position.x, p.position.y, 0, 0, p.z)
+			run_won.emit()
 		# Encounter -> Reward: the room's weapon appears at its reward spot
 		for s in stations:
 			if s.kind == StationKind.REWARD and s.ref >= 0 and not (int(room_state().taken) & (1 << s.slot)):
@@ -610,6 +834,33 @@ func _check_cleared() -> void:
 				s.node.refresh()
 				Events.push(Ev.ITEM_APPEAR, s.pos.x, s.pos.y, s.ref, 0, s.z)
 		GameState.changed.emit()
+
+
+## A run room's reward for clearing it: Essence, a weapon on its spot, healing; elites raise an altar.
+func _run_reward() -> void:
+	var p := player
+	var at := reward_spot()
+	var gz := float(map.ground_at(at.x, at.y))
+	if room.essence != Vector2i.ZERO:
+		spill_essence(p.position, p.z + 10.0, floori(rng.rangef(room.essence.x, room.essence.y + 0.999)))
+	match room.reward_kind:
+		"weapon":
+			var shown := false
+			for s in stations:
+				if s.kind == StationKind.DROP and s.slot >= 0 and s.ref >= 0 and not s.active:
+					s.active = true
+					s.node.refresh()
+					shown = true
+			if not shown and room.drop_weapon >= 0:
+				add_station(StationKind.DROP, at, room.drop_weapon)
+			Events.push(Ev.ITEM_APPEAR, at.x, at.y, room.drop_weapon, 0, gz)
+		"heal":
+			for k in 4:
+				spawn_pickup(p.position, p.z + 10.0, Tuning.PICKUP_HEAL, 0)
+			p.hp = minf(p.max_hp, p.hp + p.max_hp * 0.2)
+	if not room.choices.is_empty():
+		add_station(StationKind.ALTAR, free_spot(at), -1)
+		Events.push(Ev.ITEM_APPEAR, at.x, at.y, -1, 0, gz)
 
 
 ## Shrine and menu commands (safe areas only): buy tech, switch job, equip an owned weapon.

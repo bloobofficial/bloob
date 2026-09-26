@@ -5,13 +5,19 @@ extends RefCounted
 
 
 ## Apply damage to an enemy. Returns true if it died.
-static func damage_enemy(world: World, e: Enemy, amount: float) -> bool:
+static func damage_enemy(world: World, e: Enemy, amount: float, heavy := false) -> bool:
 	if not e.alive:
 		return false
 	var d := amount
 	if e.hex_t > 0:
 		d *= Content.skills[SkillData.Id.HEX].p("dmg_taken", 1.5)
 	e.hp -= d
+	Events.push(Ev.DAMAGE, e.position.x, e.position.y, d, 1 if heavy else 0, e.z)
+	if e.data.boss and not e.enraged and e.hp > 0.0 and e.hp < e.max_hp * 0.5:
+		# phase two: faster tells, shorter breathers (the slam's long recovery stays)
+		e.enraged = true
+		e.speed *= 1.2
+		Events.push(Ev.BOSS_PHASE, e.position.x, e.position.y, 0, 0, e.z)
 	if e.hp <= 0.0:
 		kill_enemy(world, e, false)
 		return true
@@ -35,8 +41,25 @@ static func kill_enemy(world: World, e: Enemy, ring_out: bool) -> void:
 	# XP
 	var xp := kd.kill_xp * (3 if e.champ else 1) * (1.0 + (e.level - 1) * Tuning.ENEMY_XP_PER_LVL)
 	grant_xp(world, maxi(1, roundi(xp)))
+	# passives that feed on kills
+	var pl := world.player
+	if GameState.kill_mana > 0.0:
+		pl.gain_mana(GameState.kill_mana)
+	if GameState.kill_haste > 0:
+		GameState.haste_t = maxi(GameState.haste_t, GameState.kill_haste)
+	if kd.boss:
+		world.time.request_hitstop(18, Tuning.Prio.BOSS)
+	# runs: Essence (champions and bosses more) and sometimes a health orb
+	if world.run:
+		var ess := kd.essence * (3 if e.champ else 1)
+		if ring_out:
+			GameState.add_essence(ess)
+		else:
+			world.spill_essence(pos, z + 8.0, ess)
+			if world.rng.chance(Tuning.CHAMPION_HEAL_CHANCE if e.champ else kd.loot_heal_chance):
+				world.spawn_pickup(pos, z + 8.0, Tuning.PICKUP_HEAL, 0)
 	# loot (not in the stress test)
-	if world.mode.loot:
+	elif world.mode.loot:
 		var rng := world.rng
 		var mul := Tuning.CHAMPION_LOOT_MUL if e.champ else 1
 		var ichor := roundi(rng.rangef(kd.loot_ichor.x, kd.loot_ichor.y + 0.999) - 0.499) * mul

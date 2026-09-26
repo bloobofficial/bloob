@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = "king_charge"
+name = "Barrow Charge"
+kind = 0
+range = 380.0
+windup = 40
+active = 24
+recover = 46
+cooldown = Vector2i(20, 40)
+damage = 18.0
+speed = 8.0
+radius = 0.0
+heavy = true
+arc = 0.8

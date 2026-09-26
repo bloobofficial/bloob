@@ -2,8 +2,8 @@ extends Node
 ## Loads the game's content resources (res://data) once and keeps them in the prototype's index
 ## order, so systems can refer to weapons, enemy kinds, rooms and techs by index.
 
-const WEAPON_ORDER := ["paws", "sword", "spear", "hammer", "daggers"]
-const ENEMY_ORDER := ["charger", "weaver", "flanker", "circler", "stalker", "brute"]
+const WEAPON_ORDER := ["paws", "sword", "spear", "hammer", "daggers", "staff"]
+const ENEMY_ORDER := ["charger", "weaver", "flanker", "circler", "stalker", "brute", "chaser", "rammer", "spitter", "king"]
 const JOB_ORDER := ["brawler", "warden", "trickster"]
 const START_ROOM := "sanctum"
 
@@ -15,6 +15,10 @@ var techs: Array[TechData] = []
 var rooms: Array[RoomData] = []
 var tiers: Array[TierData] = []
 var modes := {}
+var passives: Array[PassiveData] = []
+var encounters: Array[EncounterDef] = []
+## room modules only runs use (the boss arena); runs also reuse the hub rooms as modules
+var run_rooms: Array[RoomData] = []
 
 
 func _init() -> void:
@@ -41,6 +45,12 @@ func _init() -> void:
 	for f in _sorted_files("res://data/modes"):
 		var m: ModeData = load(f)
 		modes[m.id] = m
+	for f in _sorted_files("res://data/passives"):
+		passives.append(load(f))
+	for f in _sorted_files("res://data/encounters"):
+		encounters.append(load(f))
+	for f in _sorted_files("res://data/run_rooms"):
+		run_rooms.append(load(f))
 
 
 func _sorted_files(dir: String) -> Array:
@@ -80,3 +90,26 @@ func tech_index(id: String) -> int:
 
 func tier_of(tier: int) -> TierData:
 	return tiers[clampi(roundi(tier) - 1, 0, tiers.size() - 1)]
+
+
+func enemy_index(id: String) -> int:
+	return ENEMY_ORDER.find(id)
+
+
+func passive(id: String) -> PassiveData:
+	for p in passives:
+		if p.id == id:
+			return p
+	return null
+
+
+## a room layout to build run rooms from: a run-only module or one of the hub's rooms
+func module(id: String) -> RoomData:
+	for r in run_rooms:
+		if r.id == id:
+			return r
+	for r in rooms:
+		if r.id == id:
+			return r
+	push_error("Unknown room module: " + id)
+	return rooms[0]

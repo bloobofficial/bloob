@@ -19,6 +19,12 @@ var talks := 0
 var run_ticks := 0
 ## per room index: {visited, cleared, defeated, taken (bit per marker slot)}
 var room_states: Array[Dictionary] = []
+# the run loop
+var essence := 0                         ## run currency: spent in shops, lost when the run ends
+var essence_total := 0                   ## collected this run (the summary)
+var passives := PackedStringArray()      ## passive ids owned this run (may repeat: they stack)
+var weapons_used := PackedStringArray()  ## weapon names held this run, in order
+var haste_t := 0                         ## Bloodrush: ticks of bonus speed left
 
 # derived (recompute())
 var max_hp := Tuning.BASE_HP
@@ -30,13 +36,25 @@ var flask_heal := Tuning.FLASK_HEAL
 var magnet := Tuning.PICKUP_MAGNET
 var cd_mul := 1.0
 var dive_mul := 1.0
+# from passives
+var melee_mul := 1.0
+var finisher_mul := 1.0
+var reach_mul := 1.0
+var atk_speed := 1.0
+var mana_regen_mul := 1.0
+var dodge_cd_mul := 1.0
+var dmg_taken_mul := 1.0
+var kill_mana := 0.0
+var kill_haste := 0
+var essence_mul := 1.0
 
 
 func _ready() -> void:
 	reset()
 
 
-func reset() -> void:
+## Forget the run. `room_list` = the rooms this run can visit (the hub world by default).
+func reset(room_list: Array = []) -> void:
 	res = PackedInt32Array([0, 0, 0, 0])
 	techs = PackedByteArray()
 	techs.resize(Content.techs.size())
@@ -51,8 +69,13 @@ func reset() -> void:
 	kills = 0
 	talks = 0
 	run_ticks = 0
+	essence = 0
+	essence_total = 0
+	passives = PackedStringArray()
+	weapons_used = PackedStringArray()
+	haste_t = 0
 	room_states.clear()
-	for r in Content.rooms:
+	for r in (room_list if not room_list.is_empty() else Content.rooms):
 		room_states.append({visited = false, cleared = false, defeated = 0, taken = 0})
 	recompute()
 	flask = flask_max
@@ -164,7 +187,60 @@ func recompute() -> void:
 	magnet = Tuning.PICKUP_MAGNET * (2.0 if has("magnet1") else 1.0)
 	cd_mul = 0.8 if has("skills1") else 1.0
 	dive_mul = 1.25 if has("slam1") else 1.0
+	# passives: each adds its amount to one stat
+	var m := {}
+	for id in passives:
+		var pd := Content.passive(id)
+		if pd:
+			m[pd.stat] = m.get(pd.stat, 0.0) + pd.amount
+	max_hp += roundi(m.get("max_hp", 0.0))
+	melee_mul = 1.0 + m.get("melee_dmg", 0.0)
+	finisher_mul = 1.0 + m.get("finisher_dmg", 0.0)
+	reach_mul = 1.0 + m.get("reach", 0.0)
+	atk_speed = 1.0 + m.get("atk_speed", 0.0)
+	mana_regen_mul = 1.0 + m.get("mana_regen", 0.0)
+	dodge_cd_mul = maxf(0.3, 1.0 + m.get("dodge_cd", 0.0))
+	dmg_taken_mul = maxf(0.3, 1.0 + m.get("dmg_taken", 0.0))
+	kill_mana = m.get("kill_mana", 0.0)
+	kill_haste = roundi(m.get("kill_haste", 0.0))
+	essence_mul = 1.0 + m.get("essence", 0.0)
+
+
+## gain a passive (altar / shop); returns the max HP it added so the caller can heal that much
+func add_passive(id: String) -> int:
+	var before := max_hp
+	passives.append(id)
+	recompute()
+	changed.emit()
+	return max_hp - before
+
+
+func passive_count(id: String) -> int:
+	return passives.count(id)
+
+
+func add_essence(n: int) -> void:
+	var got := roundi(n * essence_mul)
+	essence += got
+	essence_total += got
+	changed.emit()
+
+
+func spend_essence(n: int) -> bool:
+	if essence < n:
+		return false
+	essence -= n
+	changed.emit()
+	return true
 
 
 func weapon_data() -> WeaponData:
 	return Content.weapons[clampi(weapon, 0, Content.weapons.size() - 1)]
+
+
+## loot that never became an orb (pickup cap, fell off the island): straight into the pockets
+func bank(type: int, amount: int) -> void:
+	if type == Tuning.PICKUP_ESSENCE:
+		add_essence(amount)
+	elif type >= 0 and type < Tuning.RES_COUNT:
+		add_res(type, amount)

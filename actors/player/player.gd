@@ -192,6 +192,7 @@ func tick(inp: InputFrame) -> void:
 	if jump_buffer > 0: jump_buffer -= 1
 	if melee.combo_cd > 0: melee.combo_cd -= 1
 	if rally_t > 0: rally_t -= 1
+	if GameState.haste_t > 0: GameState.haste_t -= 1
 	if guard_t > 0: guard_t -= 1
 	if drink_t > 0: drink_t -= 1
 	if busy_t > 0:
@@ -206,7 +207,7 @@ func tick(inp: InputFrame) -> void:
 		skill_cd[1] = 0
 		dodge_cd = mini(dodge_cd, 8)
 	if mana < max_mana:
-		mana = minf(max_mana, mana + Tuning.MANA_REGEN * s)
+		mana = minf(max_mana, mana + Tuning.MANA_REGEN * GameState.mana_regen_mul * s)
 	if heal_left > 0.0:
 		var hh := minf(heal_left, heal_rate)
 		hp = minf(max_hp, hp + hh)
@@ -286,7 +287,7 @@ func tick(inp: InputFrame) -> void:
 			dodge_dir = d
 			dodge_t = Tuning.DODGE_TICKS
 			dodge_elapsed = 0
-			dodge_cd = Tuning.DODGE_CD
+			dodge_cd = roundi(Tuning.DODGE_CD * GameState.dodge_cd_mul)
 			dodge_buffer = 0
 			perfect_done = false
 			Events.push(Ev.DODGE, position.x, position.y, d.x, d.y, z)
@@ -308,7 +309,8 @@ func tick(inp: InputFrame) -> void:
 		lunge = melee.tick(grounded)
 
 	# ---- velocity ----
-	var spd := GameState.speed_mul * (_skill_param(SkillData.Id.RALLY, "speed", 1.2) if rally_t > 0 else 1.0) * wpn.move_mul
+	var spd := GameState.speed_mul * (_skill_param(SkillData.Id.RALLY, "speed", 1.2) if rally_t > 0 else 1.0) * wpn.move_mul \
+		* (1.25 if GameState.haste_t > 0 else 1.0)
 	if dodge_t > 0:
 		var k := 0.55 + 0.45 * (float(dodge_t) / Tuning.DODGE_TICKS)
 		vel = dodge_dir * Tuning.DODGE_SPEED * k
@@ -401,6 +403,7 @@ func _resolve_dive(drop: float) -> void:
 func hurt(dmg: float, from: Vector2) -> bool:
 	if dead or invulnerable():
 		return false
+	dmg *= GameState.dmg_taken_mul
 	hp -= dmg * 0.5 if guard_t > 0 else dmg
 	drink_t = 0   # getting hit spills the flask (the heal already started keeps going)
 	invuln = Tuning.HURT_IFRAMES

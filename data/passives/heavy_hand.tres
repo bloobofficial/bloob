@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PassiveData" format=3]
+
+[ext_resource type="Script" path="res://resources/passive_data.gd" id="1_pas"]
+
+[resource]
+script = ExtResource("1_pas")
+id = "heavy_hand"
+name = "Heavy Hand"
+desc = "+15% melee damage"
+stat = "melee_dmg"
+amount = 0.15
+color = Color(1, 0.55, 0.4, 1)

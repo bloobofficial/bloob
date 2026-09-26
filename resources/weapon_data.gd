@@ -13,6 +13,8 @@ extends Resource
 @export var swing_move_mul := 0.3    ## steering while swinging
 @export var combo_window := 16       ## ticks after a swing to press the next hit
 @export var combo_end_cd := 8        ## pause after the finisher
+@export var attack_speed := 1.0      ## > 1 = every swing's windup and follow-through is shorter
+@export var mana_cost := 0.0         ## mana per swing that throws a bolt (see SwingData.bolt_damage)
 ## Forge price: Ichor, Bone, Wisp, Relic Shard
 @export var cost := PackedInt32Array([0, 0, 0, 0])
 @export var sprite := ""             ## atlas frame name (icon, rack, pickup, held)

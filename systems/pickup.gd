@@ -70,8 +70,7 @@ func tick() -> bool:
 			vel *= 0.8
 		elif g == Tuning.VOID_H and z < -200.0:
 			# fell off the island: bank it rather than lose it
-			if type != Tuning.PICKUP_HEAL:
-				GameState.add_res(type, amount)
+			GameState.bank(type, amount)
 			return false
 	queue_redraw()
 	return true
@@ -82,7 +81,7 @@ func _collect() -> void:
 	if type == Tuning.PICKUP_HEAL:
 		p.hp = minf(p.max_hp, p.hp + Tuning.HEAL_ORB)
 	else:
-		GameState.add_res(type, amount)
+		GameState.bank(type, amount)
 	Events.push(Ev.PICKUP, position.x, position.y, type, amount, z)
 
 
@@ -90,7 +89,7 @@ func _draw() -> void:
 	var c := Tuning.res_color(type)
 	var fade := 0.3 if life < 180 and (life >> 2) & 1 else 1.0
 	var bob := 0.0 if magnet else sin(world.tick_n * 0.12 + _bob_seed) * 2.0 + 3.0
-	var big := 5.0 if type == 3 else (4.5 if type == 4 else 3.2 + minf(2.0, amount * 0.3))
+	var big := 5.0 if type == 3 or type == Tuning.PICKUP_ESSENCE else (4.5 if type == 4 else 3.2 + minf(2.0, amount * 0.3))
 	var g := world.map.ground_at(position.x, position.y)
 	if g != Tuning.VOID_H and not magnet:
 		Draw25.ground_circle(self, Vector2(0, View.lift(g)), big * 0.9, Color(0, 0, 0, 0.3))

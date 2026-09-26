@@ -25,6 +25,8 @@ var _active := 0
 var _rings: Array = []       ## [pos, z, r, max_r, life, color]
 var _slashes: Array = []     ## dictionaries
 var _ghosts: Array = []      ## [pos, z, kind, life, size, flip]
+var _numbers: Array = []     ## damage numbers: [pos, z, text, life, heavy]
+var show_numbers := true
 
 var squash := 0.0             ## Bloob squash impulse
 var trauma := 0.0             ## 0..1, shake = trauma^2
@@ -55,6 +57,7 @@ func reset() -> void:
 	_rings.clear()
 	_slashes.clear()
 	_ghosts.clear()
+	_numbers.clear()
 	trauma = 0.0
 	flash = 0.0
 	vignette = 0.0
@@ -158,7 +161,8 @@ func _on_event(type: int, x: float, y: float, a: float, b: float, z: float) -> v
 		Ev.SWING:
 			var ws := Ev.unpack_swing(b)
 			var wd: WeaponData = Content.weapons[clampi(ws.x, 0, Content.weapons.size() - 1)]
-			var sw := wd.swing(ws.y)
+			# the swing as Bloob is actually swinging it (passives change reach)
+			var sw := world.player.melee.current_swing() if world.player.melee.swinging() else wd.swing(ws.y)
 			var heavy := sw.heavy
 			if _slashes.size() >= 16:
 				_slashes.pop_front()
@@ -232,7 +236,41 @@ func _on_event(type: int, x: float, y: float, a: float, b: float, z: float) -> v
 			note("Champion: " + Tuning.affix_names(int(a)), 1.8)
 		Ev.ROOM_ENTER:
 			fade = 1.0
-			say(Content.rooms[int(a)].name, 1.4)
+			say(world.rooms[int(a)].name, 1.4)
+		Ev.SPAWN_TELL:
+			ring(pos, z, 34, b / 60.0, Color(0.85, 0.35, 1.0))
+			_burst(pos, z + 2, 10, 1.2, b / 60.0, 2.2, Color(0.7, 0.35, 1.0), Vector2.ZERO, PI, 3.0)
+		Ev.ENGAGE:
+			add_trauma(0.2)
+		Ev.WAVE:
+			if int(a) > 1:
+				say("Wave %d of %d" % [int(a), int(b)], 1.2)
+		Ev.DAMAGE:
+			if _numbers.size() >= 48:
+				_numbers.pop_front()
+			_numbers.append([pos + Vector2(randf_range(-6, 6), 0), z + 26.0, str(maxi(1, roundi(a * 10.0))), 0.7, b > 0.0])
+		Ev.ITEM_DROP:
+			note("Dropped the " + Content.weapons[int(a)].name, 1.8)
+			ring(pos, z, 30, 0.35, Content.weapons[int(a)].fx_glow)
+		Ev.BOUGHT:
+			note("Bought for %d Essence" % int(a), 1.6)
+			_burst(pos, z + 20, 16, 2.2, 0.6, 2.2, Tuning.ESSENCE_COLOR, Vector2.ZERO, PI, 3)
+		Ev.PASSIVE_GAINED:
+			var pd: PassiveData = Content.passives[clampi(int(a), 0, Content.passives.size() - 1)]
+			say(pd.name, 1.6)
+			note(pd.desc, 2.4)
+			ring(pos, z, 90, 0.6, pd.color)
+			_burst(pos, z + 14, 30, 3, 0.8, 2.4, pd.color, Vector2.ZERO, PI, 4)
+			flash = 0.25
+			flash_col = Color(pd.color, 1)
+		Ev.BOSS_PHASE:
+			say("It rages!", 1.4)
+			add_trauma(0.6)
+			ring(pos, z, 180, 0.7, Color(0.85, 0.3, 0.95))
+		Ev.RUN_WON:
+			say("The Barrow King falls", 3.0)
+			flash = 0.5
+			flash_col = Color(1, 0.9, 0.6)
 		Ev.DOORS_SEALED:
 			say("The passages seal", 1.4)
 		Ev.WEAPON_FOUND:
@@ -249,10 +287,15 @@ func _on_event(type: int, x: float, y: float, a: float, b: float, z: float) -> v
 			note(wd.name + " in hand", 1.6)
 			ring(pos, z, 40, 0.35, wd.fx_glow)
 		Ev.DENIED:
-			var wd: WeaponData = Content.weapons[int(b)]
-			note(("Not enough to buy the %s yet" if int(a) == 1 else "Already holding the %s") % wd.name, 1.8)
+			if int(a) == 3:
+				note("Already at full health", 1.6)
+			elif int(b) < 0:
+				note("Not enough Essence", 1.6)
+			else:
+				var wd: WeaponData = Content.weapons[int(b)]
+				note(("Not enough to buy the %s yet" if int(a) == 1 else "Already holding the %s") % wd.name, 1.8)
 		Ev.ITEM_APPEAR:
-			note("Something glints: the " + Content.weapons[int(a)].name, 2.4)
+			note("An altar rises. Choose a skill" if int(a) < 0 else "Something glints: the " + Content.weapons[int(a)].name, 2.4)
 			ring(pos, z, 70, 0.8, Color(1, 0.9, 0.6))
 			_burst(pos, z + 10, 20, 2.4, 0.9, 2.2, Color(1, 0.9, 0.6), Vector2.ZERO, PI, 5)
 		Ev.WELL_USED:
@@ -315,6 +358,10 @@ func _process(real_dt: float) -> void:
 	for gh in _ghosts:
 		gh[3] -= real_dt
 	_ghosts = _ghosts.filter(func(gh): return gh[3] > 0.0)
+	for n in _numbers:
+		n[3] -= real_dt
+		n[1] += real_dt * 40.0
+	_numbers = _numbers.filter(func(n): return n[3] > 0.0)
 	var sh := trauma * trauma * 12.0
 	shake = Vector2(sh * (sin(_t * 71.3) + sin(_t * 43.1) * 0.5), sh * (cos(_t * 67.7) + sin(_t * 51.9) * 0.5))
 	queue_redraw()
@@ -326,7 +373,7 @@ func _draw() -> void:
 		var kd: EnemyKindData = Content.enemies[gh[2]]
 		var t: float = gh[3] / 0.2
 		var size: float = kd.sprite_scale * maxf(0.6, gh[4]) * (0.4 + 0.6 * t)
-		var tex := Art.frame("%s.hurt.0" % kd.id)
+		var tex := Art.frame("%s.hurt.0" % kd.art_id())
 		var at := View.to_world(gh[0], gh[1])
 		draw_set_transform(at, 0, Vector2(size * (1.3 - 0.3 * t), size * t * View.upright()))
 		draw_texture(tex, Vector2(-48, -(1.0 - kd.anchor) * 96.0), Color(4, 4, 4, 1))
@@ -352,6 +399,18 @@ func _draw() -> void:
 		else:
 			Draw25.dot(self, at, _ps[i] * (0.4 + kk * 0.6), col)
 	draw_set_transform(Vector2.ZERO)
+	# damage numbers: small, quick, heavier hits bigger and warmer
+	if show_numbers and not _numbers.is_empty():
+		var font := ThemeDB.fallback_font
+		for n in _numbers:
+			var w := View.to_world(n[0], n[1])
+			var size := 15 if n[4] else 11
+			var a := minf(1.0, n[3] * 3.0)
+			draw_set_transform(w, 0.0, Vector2(1.0, View.upright()))
+			var c := Color(1, 0.8, 0.35, a) if n[4] else Color(1, 1, 1, a * 0.9)
+			draw_string_outline(font, Vector2(-10, 0), n[2], HORIZONTAL_ALIGNMENT_CENTER, 20, size, 3, Color(0, 0, 0, a * 0.8))
+			draw_string(font, Vector2(-10, 0), n[2], HORIZONTAL_ALIGNMENT_CENTER, 20, size, c)
+		draw_set_transform(Vector2.ZERO)
 
 
 ## slash crescents: a pixel crescent on the ground that traces exactly the hitbox's sweep,

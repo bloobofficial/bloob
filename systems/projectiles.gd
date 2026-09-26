@@ -9,6 +9,7 @@ const OWNER_PLAYER := 0
 const OWNER_EMITTER := 1
 const OWNER_ENEMY := 2
 const OWNER_TOTEM := 3
+const OWNER_BOLT := 4      ## Bloob's staff bolts
 const EMIT_PER_TICK := 14
 const EMIT_SPEED := 5.5
 const EMIT_LIFE := 62
@@ -69,7 +70,7 @@ func update() -> void:
 	var i := 0
 	while i < pos.size():
 		var who := who_of[i]
-		var s := ps if who == OWNER_PLAYER else ws   # Bloob's shots keep full speed in slow-mo
+		var s := ps if who == OWNER_PLAYER or who == OWNER_BOLT else ws   # Bloob's shots keep full speed in slow-mo
 		if s == 0.0:
 			i += 1
 			continue
@@ -118,7 +119,7 @@ func update() -> void:
 			continue
 		var n := vel[i].normalized()
 		hit.flash = 5
-		var kn := (0.35 if hit.is_brute() else 2.2) * hit.knock_mul
+		var kn := (0.35 if hit.is_brute() else (4.0 if who == OWNER_BOLT else 2.2)) * hit.knock_mul
 		hit.knock += n * kn
 		if who != OWNER_EMITTER and hit.freeze == 0:
 			hit.freeze = 2   # local hitstop: only the struck enemy stalls
@@ -153,6 +154,9 @@ func _draw() -> void:
 				Draw25.dot(self, at, 4.5, Color(1, 0.3, 0.6))
 			OWNER_TOTEM:
 				Draw25.dot(self, at, 3.0, Color(1, 0.85, 0.45))
+			OWNER_BOLT:
+				Draw25.dot(self, at, 10.0, Color(0.55, 0.65, 1, 0.22))
+				Draw25.dot(self, at, 4.6, Color(0.75, 0.85, 1))
 			_:
 				# stress-test sprayer shots: many of them, so a cheap square
 				draw_rect(Rect2(at.x - 2.2, at.y - 2.2, 4.4, 4.4), Color(0.3, 0.75, 0.8, 0.8))

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+[ext_resource type="Resource" path="res://data/attacks/ram.tres" id="2_a"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="9_kind"]
+
+[resource]
+script = ExtResource("9_kind")
+id = "rammer"
+name = "Charger"
+kind_index = 7
+color = Color(1, 0.6, 0.28, 1)
+radius = 10.0
+hp = 20.0
+speed = 1.25
+attacks = Array[ExtResource("1_atk")]([ExtResource("2_a")])
+attack_weights = PackedFloat32Array(1)
+art = "charger"
+essence = 3
+kill_xp = 6
+sprite_scale = 0.5
+loot_heal_chance = 0.2

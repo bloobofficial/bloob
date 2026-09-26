@@ -8,9 +8,11 @@ extends CanvasLayer
 ##  screen overlays: hit flash, slow-mo vignette, room fade
 
 const SAFE_LABEL := {
-	hub = "Safe · home. The Sanctum mends you", shop = "Safe · weapon racks",
+	hub = "Safe · home. The Sanctum mends you", shop = "Safe · wares for sale",
 	social = "Safe · friends and the notice board", rest = "Safe · a well and a Shrine",
 	explore = "Safe · look around", training = "Safe · practice ground",
+	start = "Safe · take up a weapon, then go on", altar = "Safe · an altar offers skills",
+	weapon = "Safe · a weapon waits", event = "Safe · a cache of Essence", safe = "Safe · the well mends you once",
 }
 
 var world: World
@@ -48,6 +50,9 @@ var _bubble_text: Label
 var _bubble_at := Vector3.ZERO
 var _bubble_until := 0
 var _perf: Label
+var _boss_box: VBoxContainer
+var _boss_name: Label
+var _boss_hp: Meter
 var _hp_lag := 1.0
 var _shown_weapon := -1
 var _slow_alpha := 0.0
@@ -110,6 +115,9 @@ func _build() -> void:
 	mm.position = Vector2(-16, 14)
 	mm.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_minimap = WorldMapView.new()
+	_minimap.box = Vector2(46, 22)
+	_minimap.gap = Vector2(10, 9)
+	_minimap.label_chars = 5
 	mm.add_child(_minimap)
 	root.add_child(mm)
 	# vitals (bottom left)
@@ -243,6 +251,26 @@ func _build() -> void:
 	_bubble.add_child(bv)
 	_bubble.visible = false
 	root.add_child(_bubble)
+	# boss health (top centre)
+	_boss_box = VBoxContainer.new()
+	_boss_box.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_boss_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_boss_box.offset_left = -260
+	_boss_box.offset_right = 260
+	_boss_box.offset_top = 18
+	_boss_box.custom_minimum_size = Vector2(520, 0)
+	_boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_name = UiStyle.label("", 16, Color(0.9, 0.7, 1.0))
+	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_boss_name.add_theme_constant_override("outline_size", 4)
+	_boss_box.add_child(_boss_name)
+	_boss_hp = Meter.new()
+	_boss_hp.fill_color = Color(0.75, 0.3, 0.95)
+	_boss_hp.custom_minimum_size = Vector2(520, 10)
+	_boss_box.add_child(_boss_hp)
+	_boss_box.visible = false
+	root.add_child(_boss_box)
 	# performance panel (F2)
 	_perf = UiStyle.label("", 10)
 	_perf.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -331,6 +359,7 @@ func _process(_delta: float) -> void:
 	if p.guard_t > 0: st.append("Guard %ds" % ceili(p.guard_t / 60.0))
 	if p.buff > 0: st.append("Empowered %ds" % ceili(p.buff / 60.0))
 	if p.heal_left > 0: st.append("Mending")
+	if GameState.haste_t > 0: st.append("Bloodrush")
 	_status.text = "  ".join(st)
 	# kit
 	var w := GameState.weapon
@@ -368,18 +397,29 @@ func _process(_delta: float) -> void:
 	if world.room.encounter == null:
 		obj = SAFE_LABEL.get(world.room.kind, "Safe")
 	elif world.encounter == null or world.room_state().cleared:
-		obj = "Cleared · passages open"
+		obj = "Cleared · passages open" if not world.run_over else "The run is won"
+	elif world.phase == World.Phase.ENTERED:
+		obj = "Something stirs…"
 	elif rem < 0:
 		obj = "Endless · passages stay open"
+	elif world.room.waves.size() > 1:
+		obj = "Passages sealed · wave %d of %d · %d left" % [world.wave + 1, world.room.waves.size(), rem]
 	else:
 		obj = "Passages sealed · %d left" % rem
 	_objective.text = obj
 	_objective.add_theme_color_override("font_color", UiStyle.ASH if world.doors_open else UiStyle.BLOOD)
-	var rs := PackedStringArray()
-	for k in Tuning.RES_COUNT:
-		rs.append("%s %d" % [Tuning.RES_NAMES[k], GameState.res[k]])
-	_res.text = "   ".join(rs)
+	if world.in_run():
+		_res.text = "Essence %d" % GameState.essence
+		_res.add_theme_color_override("font_color", Tuning.ESSENCE_COLOR)
+	else:
+		var rs := PackedStringArray()
+		for k in Tuning.RES_COUNT:
+			rs.append("%s %d" % [Tuning.RES_NAMES[k], GameState.res[k]])
+		_res.text = "   ".join(rs)
+		_res.add_theme_color_override("font_color", UiStyle.BONE)
+	_minimap.use_rooms(world.rooms, world.in_run())
 	_minimap.refresh(world.room_idx)
+	_update_boss()
 	_update_prompt()
 	_update_bubble()
 	_perf.visible = show_perf
@@ -406,6 +446,25 @@ func _update_prompt() -> void:
 				World.StationKind.NPC:
 					var npc: NpcData = world.room.npcs[s.ref] if s.ref < world.room.npcs.size() else null
 					html = "%s Talk to %s" % [T, npc.name if npc else "them"]
+				World.StationKind.ALTAR: html = "%s Altar [color=#9a93a8]choose one of three skills[/color]" % T
+				World.StationKind.DROP:
+					var wd: WeaponData = Content.weapons[s.ref]
+					html = "%s Pick up the %s%s\n[color=#9a93a8]%s · reach %d · %.1f per combo[/color]" % [T, wd.name,
+						" [color=#9a93a8](drops your %s)[/color]" % GameState.weapon_data().name if GameState.weapon > 0 else "", wd.traits, wd.reach(), wd.combo_damage()]
+				World.StationKind.OFFER:
+					var o: Dictionary = s.offer
+					var can: bool = GameState.essence >= o.price
+					var what := ""
+					match o.type:
+						"weapon":
+							var wd: WeaponData = Content.weapons[o.ref]
+							what = "%s\n[color=#9a93a8]%s[/color]" % [wd.name, wd.traits]
+						"skill":
+							var pd := Content.passive(o.ref)
+							what = "Skill: %s\n[color=#9a93a8]%s[/color]" % [pd.name, pd.desc]
+						"heal":
+							what = "Heal %d%% HP" % roundi(float(o.ref) * 100)
+					html = "%s Buy %s  [color=%s]%d Essence[/color]" % [T, what, "#b98cff" if can else "#e0453a", o.price]
 				World.StationKind.RACK, World.StationKind.REWARD:
 					var wd: WeaponData = Content.weapons[s.ref]
 					var stats := "\n[color=#9a93a8]%s · reach %d · %.1f per combo[/color]" % [wd.traits, wd.reach(), wd.combo_damage()]
@@ -425,8 +484,11 @@ func _update_prompt() -> void:
 					continue
 				var link = world.room.doors.get(d.id)
 				if link:
-					var to := Content.rooms[Content.room_index(link[0])]
-					html = "To %s [color=#9a93a8]%s[/color]" % [to.name, "danger" if to.kind == "combat" or to.kind == "elite" else "safe"]
+					var to := world.rooms[world.room_index_of(link[0])]
+					if world.in_run():
+						html = "Onward: [b]%s[/b]" % RunPlan.describe(to)
+					else:
+						html = "To %s [color=#9a93a8]%s[/color]" % [to.name, "danger" if to.kind == "combat" or to.kind == "elite" else "safe"]
 				break
 	_prompt_box.visible = html != ""
 	if _prompt.text != html:
@@ -443,3 +505,19 @@ func _update_bubble() -> void:
 	var wp := View.to_world(Vector2(_bubble_at.x, _bubble_at.y), _bubble_at.z + 64.0)
 	var sp := world.get_viewport().get_canvas_transform() * wp
 	_bubble.position = sp - Vector2(_bubble.size.x / 2.0, _bubble.size.y)
+
+
+## the boss's health across the top of the screen while it lives
+func _update_boss() -> void:
+	var boss: Enemy = null
+	for e in world.enemies:
+		if e.alive and e.data.boss:
+			boss = e
+			break
+	_boss_box.visible = boss != null
+	if boss == null:
+		return
+	_boss_name.text = boss.data.name + ("  ·  enraged" if boss.enraged else "")
+	_boss_hp.value = maxf(0.0, boss.hp / maxf(1.0, boss.max_hp))
+	_boss_hp.lag = 0.0
+	_boss_hp.queue_redraw()

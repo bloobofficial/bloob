@@ -1,0 +1,110 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://resources/swing_data.gd" id="1_sw"]
+[ext_resource type="Script" path="res://resources/weapon_data.gd" id="2_wd"]
+
+[sub_resource type="Resource" id="Resource_air"]
+script = ExtResource("1_sw")
+name = "Air Spark"
+windup = 3
+recover = 9
+chain_from = 99
+range = 50.0
+arc = 1.0
+damage = 0.8
+knock = 3.0
+stagger = 12
+lunge = 0.8
+has_vis = true
+vis_from = -1.1
+vis_to = 1.0
+vis_lift = 0.5
+bolt_damage = 1.4
+bolt_speed = 9.5
+
+[sub_resource type="Resource" id="Resource_c1"]
+script = ExtResource("1_sw")
+name = "Spark"
+windup = 5
+recover = 10
+chain_from = 4
+range = 50.0
+arc = 0.9
+damage = 0.8
+knock = 3.0
+stagger = 10
+lunge = 1.0
+has_vis = true
+vis_from = -1.0
+vis_to = 0.9
+vis_lift = 0.45
+bolt_damage = 1.6
+bolt_speed = 9.5
+
+[sub_resource type="Resource" id="Resource_c2"]
+script = ExtResource("1_sw")
+name = "Counter-spark"
+windup = 5
+recover = 10
+chain_from = 4
+range = 50.0
+arc = 0.9
+damage = 0.8
+knock = 3.4
+stagger = 10
+lunge = 1.0
+pose = 1
+has_vis = true
+vis_from = 1.0
+vis_to = -0.9
+vis_lift = 0.45
+bolt_damage = 1.6
+bolt_speed = 9.5
+
+[sub_resource type="Resource" id="Resource_c3"]
+script = ExtResource("1_sw")
+name = "Starburst"
+windup = 12
+active = 4
+recover = 20
+chain_from = 99
+range = 58.0
+arc = 1.2
+damage = 1.2
+knock = 8.0
+stagger = 26
+lunge = 0.5
+freeze_enemy = 4
+freeze_self = 3
+hitstop = 3
+breaks_poise = true
+heavy = true
+pose = 2
+has_vis = true
+vis_lift = 1.0
+bolt_damage = 1.5
+bolt_speed = 10.0
+bolt_shots = 3
+bolt_spread = 0.22
+
+[resource]
+script = ExtResource("2_wd")
+id = "staff"
+name = "Wisp Staff"
+blurb = "Every swing throws a bolt of mana. Light bonks refill it."
+combo = Array[ExtResource("1_sw")]([SubResource("Resource_c1"), SubResource("Resource_c2"), SubResource("Resource_c3")])
+air = SubResource("Resource_air")
+swing_move_mul = 0.35
+combo_end_cd = 12
+mana_cost = 5.0
+cost = PackedInt32Array(60, 0, 10, 0)
+sprite = "weapon.staff"
+held = true
+art_scale = 0.66
+grip = 0.12
+rest = 0.35
+fx_rim = Color(0.55, 0.7, 1, 1)
+fx_trail = Color(0.7, 0.85, 1, 1)
+fx_glow = Color(0.5, 0.7, 1, 1)
+fx_heavy_glow = Color(0.6, 0.6, 1, 1)
+traits = "3 hits · ranged bolts · costs mana · weak up close"

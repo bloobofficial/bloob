@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = "king_slam"
+name = "Grave Slam"
+kind = 2
+range = 160.0
+windup = 54
+active = 1
+recover = 120
+cooldown = Vector2i(30, 50)
+damage = 24.0
+speed = 0.0
+radius = 140.0
+heavy = true
+arc = 0.8

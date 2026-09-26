@@ -85,7 +85,7 @@ func _process(_delta: float) -> void:
 func _render() -> void:
 	var p := world.player
 	var key := "%d|%d|%d|%d|%d|%d|%s|%s|%d|%d|%s|%d|%d|%d|%d|%d" % [tab, GameState.level, GameState.xp, ceili(p.hp), floori(p.mana), GameState.weapon,
-		GameState.weapons, GameState.res, GameState.flask, GameState.job, GameState.techs, world.room_idx, _sel_item, _item_cat, GameState.kills, int(Sfx.enabled)]
+		GameState.weapons, GameState.res, GameState.flask, GameState.job, GameState.techs, world.room_idx, _sel_item, _item_cat, GameState.kills, int(Sfx.enabled)] + "|%d|%d" % [GameState.passives.size(), GameState.essence]
 	if key == _key:
 		return
 	_key = key
@@ -161,11 +161,16 @@ func _character() -> void:
 		["Pickup reach", str(roundi(GameState.magnet))]])
 	var combat := 0
 	var cleared := 0
-	for i in Content.rooms.size():
-		if Content.rooms[i].encounter and Content.rooms[i].on_map:
+	for i in world.rooms.size():
+		if world.rooms[i].encounter and world.rooms[i].on_map:
 			combat += 1
 			if GameState.room_states[i].cleared:
 				cleared += 1
+	if world.in_run():
+		_h4("Run")
+		_stats([["Essence", "%d  (%d collected)" % [GameState.essence, GameState.essence_total]], ["Seed", str(world.run.seed_value)],
+			["Melee damage", _pct(GameState.melee_mul)], ["Reach", _pct(GameState.reach_mul)],
+			["Swing speed", _pct(GameState.atk_speed)], ["Damage taken", _pct(GameState.dmg_taken_mul)]])
 	var secs := GameState.run_ticks / 60
 	var owned := []
 	for i in Content.techs.size():
@@ -178,7 +183,7 @@ func _character() -> void:
 
 
 func _equipment() -> void:
-	var safe := world.room.encounter == null
+	var safe := world.room.encounter == null and not world.in_run()   # in a run you hold what you picked up
 	var wd := GameState.weapon_data()
 	_h3("Equipment")
 	var cur := HBoxContainer.new()
@@ -248,7 +253,17 @@ func _skills() -> void:
 	var job := GameState.job_data()
 	_h3("Skills")
 	_h4("Learned skills")
-	_text("[color=#9a93a8]No skills acquired.[/color]")
+	if GameState.passives.is_empty():
+		_text("[color=#9a93a8]No skills acquired. Altars, elite rewards and shops offer them.[/color]")
+	else:
+		var seen := {}
+		for id in GameState.passives:
+			if seen.has(id):
+				continue
+			seen[id] = true
+			var pd := Content.passive(id)
+			var n := GameState.passive_count(id)
+			_text("[b][color=%s]%s[/color][/b]%s\n%s" % [UiStyle.hex(pd.color), pd.name, "  ×%d" % n if n > 1 else "", pd.desc])
 	_h4("Job abilities · " + job.name)
 	for slot in 2:
 		var d: SkillData = job.skills[slot]
@@ -305,6 +320,8 @@ func _map() -> void:
 	_h3("Map")
 	_text("You are in [b]%s[/b]. %s" % [r.name, r.blurb])
 	var m := WorldMapView.new()
+	m.use_rooms(world.rooms, world.in_run())
+	m.label_chars = 0
 	m.box = Vector2(110, 60)
 	m.gap = Vector2(24, 20)
 	m.label_chars = 0

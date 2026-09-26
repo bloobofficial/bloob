@@ -20,6 +20,7 @@ var melee_hits := 0
 var last_swing_hits := 0
 var _hit_list: Array[Enemy] = []
 var _connected := false
+var _cur: SwingData = null   ## the swing in progress, with Bloob's speed / reach applied
 
 
 func reset() -> void:
@@ -38,6 +39,7 @@ func reset() -> void:
 
 ## drop any swing in progress (dodge, jump, flask, skills, weapon swap)
 func cancel() -> void:
+	_cur = null
 	atk_step = 0
 	atk_t = -1
 	combo_window = 0
@@ -52,6 +54,8 @@ func weapon_data() -> WeaponData:
 
 
 func current_swing() -> SwingData:
+	if _cur != null and atk_step > 0:
+		return _cur
 	return weapon_data().swing(atk_step)
 
 
@@ -70,6 +74,8 @@ func swing_phase() -> int:
 func _start(step: int) -> void:
 	atk_step = step
 	atk_t = 0
+	var wpn := weapon_data()
+	_cur = wpn.swing(step).scaled(wpn.attack_speed * GameState.atk_speed, GameState.reach_mul)
 	atk_buffer = 0
 	combo_window = 0
 	var a := player.aim - player.position
@@ -91,6 +97,8 @@ func tick(grounded: bool) -> float:
 		var total := sw.total_ticks()
 		if atk_t == sw.windup:
 			Events.push(Ev.SWING, player.position.x, player.position.y, atk_dir.angle(), Ev.pack_swing(weapon, atk_step), player.z)
+			if sw.bolt_damage > 0.0:
+				_throw_bolt(sw, wpn)
 		if atk_t >= sw.windup and atk_t < sw.windup + sw.active:
 			lunge = sw.lunge
 			_sweep(sw, atk_t - sw.windup)
@@ -141,7 +149,8 @@ func _sweep(sw: SwingData, k: int) -> void:
 	var half_w := (sw.width if sw.width > 0.0 else 12.0) * 0.5
 	var impact := sw.impact
 	var ic := p + ax * maxf(0.0, sw.range - impact)
-	var dmg_mul := (Tuning.PERFECT_DAMAGE_MUL if player.buff > 0 else 1.0) * player.out_mul()
+	var dmg_mul := (Tuning.PERFECT_DAMAGE_MUL if player.buff > 0 else 1.0) * player.out_mul() * GameState.melee_mul \
+		* (GameState.finisher_mul if sw.heavy else 1.0)
 	var tag := Ev.pack_swing(weapon, atk_step)
 	var hits := 0
 	for e: Enemy in world.enemies.duplicate():
@@ -193,7 +202,7 @@ func _sweep(sw: SwingData, k: int) -> void:
 			e.timer = 45
 			e.cd = Tuning.BRUTE_RECOVER
 		Events.push(Ev.MELEE_HIT, e.position.x, e.position.y, kd.angle(), tag, e.z)
-		CombatRules.damage_enemy(world, e, sw.damage * dmg_mul)
+		CombatRules.damage_enemy(world, e, sw.damage * dmg_mul, sw.heavy)
 	if hits > 0:
 		player.gain_mana(Tuning.MANA_PER_HIT * hits)
 		if not _connected:
@@ -206,3 +215,20 @@ func _sweep(sw: SwingData, k: int) -> void:
 				world.time.request_hitstop(sw.hitstop, Tuning.Prio.HIT)
 		melee_hits += hits
 		last_swing_hits += hits
+
+
+## Staff swings throw bolts of mana along the aim (out of mana: the swing is just a bonk).
+func _throw_bolt(sw: SwingData, wpn: WeaponData) -> void:
+	var world := player.world
+	var cost := 0.0 if world.dev.no_cooldowns else wpn.mana_cost
+	if player.mana < cost:
+		if player.no_mana_t == 0:
+			Events.push(Ev.NO_MANA, player.position.x, player.position.y, -1, cost, player.z)
+		player.no_mana_t = 30
+		return
+	player.mana -= cost
+	var dmg := sw.bolt_damage * player.out_mul() * (Tuning.PERFECT_DAMAGE_MUL if player.buff > 0 else 1.0)
+	for k in sw.bolt_shots:
+		var a := atk_dir.angle() + (k - (sw.bolt_shots - 1) / 2.0) * sw.bolt_spread
+		var dir := Vector2.from_angle(a)
+		world.projectiles.spawn(player.position + dir * 14.0, player.z + 16.0, dir * sw.bolt_speed, 70, dmg, Projectiles.OWNER_BOLT)

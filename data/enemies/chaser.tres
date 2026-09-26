@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyKindData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+[ext_resource type="Resource" path="res://data/attacks/bite.tres" id="2_a"]
+[ext_resource type="Script" path="res://resources/enemy_kind_data.gd" id="9_kind"]
+
+[resource]
+script = ExtResource("9_kind")
+id = "chaser"
+name = "Chaser"
+kind_index = 6
+color = Color(1, 0.5, 0.72, 1)
+radius = 8.0
+hp = 16.0
+speed = 1.7
+attacks = Array[ExtResource("1_atk")]([ExtResource("2_a")])
+attack_weights = PackedFloat32Array(1)
+art = "stalker"
+essence = 2
+kill_xp = 5
+sprite_scale = 0.56
+loot_heal_chance = 0.2

@@ -47,6 +47,15 @@ const DENIED := 40        ## a = 1 can't afford, 2 already equipped; b = weapon 
 const ITEM_APPEAR := 41   ## a = weapon index
 const ROOM_EXIT := 42
 const NO_MANA := 43       ## a = skill slot, b = cost
+const SPAWN_TELL := 44    ## a = kind, b = ticks until it arrives
+const ITEM_DROP := 45     ## a = weapon index (the one Bloob let go of)
+const BOUGHT := 46        ## a = price
+const PASSIVE_GAINED := 47   ## a = passive index
+const DAMAGE := 48        ## a = amount, b = 1 heavy
+const WAVE := 49          ## a = wave number (1-based), b = waves
+const ENGAGE := 50        ## a run room's fight begins
+const RUN_WON := 51
+const BOSS_PHASE := 52    ## the boss is hurt: it speeds up
 
 
 static func pack_swing(w: int, step: int) -> int:

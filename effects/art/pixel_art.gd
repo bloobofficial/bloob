@@ -445,3 +445,22 @@ static func paw() -> Pix:
 		g.set_c(v.x, v.y, OUT)
 		g.set_c(v.x, v.y + 1, OUT)
 	return g
+
+
+static func staff() -> Pix:
+	var g := Pix.new(48, 48)
+	for y in range(12, 46):
+		g.set_c(24, y, WOOD_DK if y % 7 == 0 else WOOD)
+		g.set_c(23, y, WOOD_DK if y % 7 == 4 else WOOD)
+	# a gnarled crook cradling a wisp crystal
+	for v in [Vector2i(21, 10), Vector2i(20, 9), Vector2i(20, 8), Vector2i(21, 7), Vector2i(26, 10), Vector2i(27, 9), Vector2i(27, 8), Vector2i(26, 7)]:
+		g.set_c(v.x, v.y, WOOD_DK)
+	g.rect(22, 11, 4, 1, WOOD_DK)
+	var rows := [1, 2, 3, 3, 2, 1]
+	for k in rows.size():
+		for x in range(24 - rows[k], 24 + rows[k]):
+			g.set_c(x, 3 + k, RUNE if x < 24 else STONE_HI)
+	g.set_c(23, 5, GLINT); g.set_c(22, 6, SPARK2)
+	g.rect(22, 26, 4, 2, BONE_DK); g.set_c(22, 26, BONE)
+	g.outline()
+	return g

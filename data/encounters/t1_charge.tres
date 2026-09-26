@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://resources/encounter_def.gd" id="1_enc"]
+
+[resource]
+script = ExtResource("1_enc")
+id = "t1_charge"
+kind = "combat"
+tier = 1
+waves = Array[PackedStringArray]([PackedStringArray("rammer", "chaser")])
+extra_pool = PackedStringArray("chaser", "spitter")
+extra = 1
+champions = 0
+essence = Vector2i(10, 14)

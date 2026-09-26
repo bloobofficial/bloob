@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LayoutTemplate" format=3]
+
+[ext_resource type="Script" path="res://resources/layout_template.gd" id="1_lay"]
+
+[resource]
+script = ExtResource("1_lay")
+id = "long"
+shape = "LONG"
+names = PackedStringArray("Longwood", "The Long Hollow")
+rows = PackedStringArray("#####A#####", "####.=.####", "##.*.=.*.##", "##...=...##", "##.o.=.o.##", "###..=..###", "####.=.nn$#", "#####n#####", "#####n#####", "###..=...##", "##.*.=.*..#", "#h...=....#", "##.o.=.o..#", "###..=..###", "####.=.####", "#####=#####", "#####=#####", "#####C#####")

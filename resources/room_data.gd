@@ -23,3 +23,14 @@ extends Resource
 
 func is_safe() -> bool:
 	return encounter == null
+
+# ---- run rooms only (set by RunPlan on its runtime copies, never saved) ----
+var entrance := ""                    ## the passage you arrive through ("" = start marker)
+var layer := 0                        ## step of the run (0 = start)
+var reward_kind := ""                 ## what clearing it gives: essence, weapon, heal
+var drop_weapon := -1                 ## weapon lying at the reward spot / granted on clear
+var waves: Array = []                 ## rolled fight: [[enemy kind index, ...], ...]
+var champions := 0
+var essence := Vector2i.ZERO          ## Essence spilled on clear
+var choices := PackedStringArray()    ## altar: passive ids on offer
+var offers: Array = []                ## shop: [{type, ref, price, sold}]

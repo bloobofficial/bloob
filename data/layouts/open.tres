@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LayoutTemplate" format=3]
+
+[ext_resource type="Script" path="res://resources/layout_template.gd" id="1_lay"]
+
+[resource]
+script = ExtResource("1_lay")
+id = "open"
+shape = "OPEN"
+names = PackedStringArray("Open Moor", "The Clearing")
+rows = PackedStringArray("#########A##########", "######...=...#######", "###h#....=.*....####", "##...*..o=....o..###", "#..o.....=...~~...##", "D=....*..=...~~.*..#", "#.....o..=.....o..=B", "#..111...=..*....###", "#..1g1...=.......$##", "#..^.o...=..o..*..##", "##.......=....~...##", "###..*...=...*..####", "######...=...#######", "#########C##########")

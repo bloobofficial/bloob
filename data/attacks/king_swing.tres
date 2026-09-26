@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = "king_swing"
+name = "Great Swing"
+kind = 4
+range = 100.0
+windup = 30
+active = 4
+recover = 32
+cooldown = Vector2i(20, 40)
+damage = 16.0
+speed = 2.5
+radius = 0.0
+heavy = true
+arc = 1.35

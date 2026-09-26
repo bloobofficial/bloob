@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://resources/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = "ram"
+name = "Ram"
+kind = 0
+range = 230.0
+windup = 36
+active = 20
+recover = 60
+cooldown = Vector2i(130, 200)
+damage = 13.0
+speed = 7.5
+radius = 0.0
+heavy = true
+arc = 0.8
