@@ -18,6 +18,7 @@ const SAFE_LABEL := {
 var world: World
 var show_perf := false
 
+var _haze: TextureRect
 var _flash: ColorRect
 var _slowmo: TextureRect
 var _fade: ColorRect
@@ -69,6 +70,14 @@ func _build() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	# depth haze: the far side of the view (screen top) fades into the room's dusk, the near
+	# edge darkens a touch, so the ground reads as receding into the distance
+	_haze = TextureRect.new()
+	_haze.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_haze.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_haze.stretch_mode = TextureRect.STRETCH_SCALE
+	_haze.texture = _haze_texture()
+	root.add_child(_haze)
 	# overlays
 	_flash = ColorRect.new()
 	_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -111,6 +120,9 @@ func _build() -> void:
 	tl.add_child(_objective)
 	_res = UiStyle.label("", 11)
 	tl.add_child(_res)
+	for l in [_sub, _objective, _res]:
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.75))
+		l.add_theme_constant_override("outline_size", 4)
 	# minimap (top right)
 	var mm := UiStyle.panel(0.7)
 	mm.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -297,6 +309,22 @@ func _meter_row(tag: String, col: Color) -> Array:
 	return [m, t, row]
 
 
+func _haze_texture() -> Texture2D:
+	var g := Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 0.42))
+	g.add_point(0.3, Color(1, 1, 1, 0.12))
+	g.add_point(0.55, Color(1, 1, 1, 0.0))
+	g.add_point(0.85, Color(0, 0, 0, 0.0))
+	g.set_color(g.get_point_count() - 1, Color(0, 0, 0, 0.22))
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill_from = Vector2(0, 0)
+	t.fill_to = Vector2(0, 1)
+	t.width = 4
+	t.height = 256
+	return t
+
+
 func _vignette_texture() -> Texture2D:
 	var g := Gradient.new()
 	g.set_color(0, Color(0, 0, 0, 0))
@@ -327,6 +355,8 @@ func _process(_delta: float) -> void:
 	var p := world.player
 	var fx := world.fx
 	# overlays
+	var fog: Color = world.room.theme.fog
+	_haze.modulate = Color(fog.lightened(0.12), 1.0)
 	_flash.color = Color(fx.flash_col, fx.flash)
 	var slow_target := maxf(0.85 if world.time.slowmo > 0 else 0.0, fx.vignette * 0.6)
 	_slowmo.modulate.a = slow_target
