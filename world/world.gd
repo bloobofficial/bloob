@@ -93,6 +93,13 @@ var spawning := true               ## tests can switch the director off
 var god_override := false
 var debug_hitboxes := false        ## H: hitbox overlay
 var debug_states := false          ## dev: AI state rings
+## generated maps: fog of war for the minimap, and which area Bloob is in
+var explored := PackedByteArray()        ## per cell: 1 = seen
+var reveal_log := PackedInt32Array()     ## cells uncovered this visit, in order (the minimap reads it)
+var area_idx := -1                       ## index into room.areas, -1 = none yet
+var areas_seen := {}
+var decor_nodes: Array[Node] = []
+var _reveal_cell := -1
 var _field_goals := PackedInt32Array([-1, -1, -1, -1, -1])
 var _grid := {}
 
@@ -110,6 +117,7 @@ func _ready() -> void:
 	projectiles.world = self
 	fx.world = self
 	($Doors as DoorGlow).world = self
+	($Backdrop as Backdrop).world = self
 
 
 # ---------------- runs & rooms ----------------
@@ -210,6 +218,7 @@ func load_room(idx: int, via_door: String) -> void:
 	for wgt in base_mix:
 		mix.append(wgt * rng.rangef(0.5, 1.5) if wgt > 0 else 0.0)
 	_build_stations(def, st)
+	_build_decor(def)
 	# the Sanctum restores you: full health, flask refilled (elsewhere, find a well)
 	if def.restore:
 		GameState.flask = GameState.flask_max
@@ -231,6 +240,16 @@ func load_room(idx: int, via_door: String) -> void:
 	if run and idx == 0 and run.start_weapon >= 0 and not (int(st.taken) & 1 << 30):
 		st.taken = int(st.taken) | 1 << 30
 		add_station(StationKind.DROP, free_spot(arrive + Vector2(70, -40)), run.start_weapon)
+	# a generated map: its monsters lie asleep in their glades
+	if active and def.kind == "wilds":
+		Hunt.populate(self)
+	explored = PackedByteArray()
+	explored.resize(map.w * map.h)
+	reveal_log = PackedInt32Array()
+	areas_seen = {}
+	area_idx = -1
+	_reveal_cell = -1
+	_reveal(true)
 	# stress-test sprayers (proto-towers)
 	var n_em := mini(mode.emitters, 16) if encounter else 0
 	for i in n_em:
@@ -247,6 +266,74 @@ func load_room(idx: int, via_door: String) -> void:
 	if active and not doors_open and phase == Phase.COMBAT:
 		Events.push(Ev.DOORS_SEALED, arrive.x, arrive.y, 0, 0, player.z)
 	room_loaded.emit(idx)
+
+
+## torches and braziers from a generated map's decor list
+func _build_decor(def: RoomData) -> void:
+	for n in decor_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	decor_nodes.clear()
+	for d in def.decor:
+		var node := Decor.new()
+		var at := Vector2((d.cell.x + 0.5) * Tuning.CELL, (d.cell.y + 0.5) * Tuning.CELL)
+		node.setup(d.type, at, float(map.ground_at(at.x, at.y)))
+		actors.add_child(node)
+		decor_nodes.append(node)
+
+
+## Uncover the map around Bloob (and a whole area the first time he walks into it), and note
+## which area he's in. `arriving`: no banner for the area you arrive in.
+func _reveal(arriving := false) -> void:
+	var c := map.cell_of(player.position.x, player.position.y)
+	if c < 0 or c == _reveal_cell:
+		return
+	_reveal_cell = c
+	var cx := c % map.w
+	var cy := c / map.w
+	var R := Tuning.REVEAL_R
+	for oy in range(-R, R + 1):
+		var y := cy + oy
+		if y < 0 or y >= map.h:
+			continue
+		for ox in range(-R, R + 1):
+			var x := cx + ox
+			if x >= 0 and x < map.w and ox * ox + oy * oy <= R * R:
+				_uncover(y * map.w + x)
+	var a := map.zone[c] - 1
+	if a < 0 or a >= room.areas.size() or a == area_idx:
+		return
+	area_idx = a
+	if areas_seen.has(a):
+		return
+	areas_seen[a] = true
+	var r: Rect2i = room.areas[a].rect.grow(3)
+	for y in range(maxi(0, r.position.y), mini(map.h, r.end.y)):
+		for x in range(maxi(0, r.position.x), mini(map.w, r.end.x)):
+			_uncover(y * map.w + x)
+	if not arriving:
+		fx.say(room.areas[a].name, 1.2)
+
+
+func _uncover(k: int) -> void:
+	if explored[k] == 0:
+		explored[k] = 1
+		reveal_log.append(k)
+
+
+## what to call where Bloob stands: the area of a generated map, or the room
+func place_name() -> String:
+	if area_idx >= 0 and area_idx < room.areas.size():
+		return room.areas[area_idx].name
+	return room.name
+
+
+## an awake monster close enough that stopping to shop or pray would be a mistake
+func danger_near(r := 320.0) -> bool:
+	for e: Enemy in enemies:
+		if e.alive and not e.dormant and e.position.distance_to(player.position) < r:
+			return true
+	return false
 
 
 ## the ground point nearest `p` Bloob could stand on (a cell centre)
@@ -396,9 +483,20 @@ func interact() -> void:
 			_swap_weapon(s)
 		StationKind.CACHE when run:
 			_take_slot(s)
-			var n := floori(rng.rangef(room.essence.x, room.essence.y + 0.999)) if room.essence != Vector2i.ZERO else 12
+			var lim: Vector2i = RunPlan.LOOT_ESSENCE if room.kind == "wilds" else room.essence
+			var n := floori(rng.rangef(lim.x, lim.y + 0.999)) if lim != Vector2i.ZERO else 12
 			spill_essence(s.pos + Vector2(0, 20), s.z + 10.0, n)
 			Events.push(Ev.LOOT, sx, sy, 1, 0, s.z)
+			# hidden loot: sometimes a weapon was stashed with it, sometimes a little healing
+			if room.kind == "wilds":
+				var roll := rng.next()
+				if roll < 0.35:
+					var w := 1 + rng.pick(Content.weapons.size() - 1)
+					add_station(StationKind.DROP, free_spot(s.pos + Vector2(0, 44)), w)
+					Events.push(Ev.ITEM_APPEAR, sx, sy + 44, w, 0, s.z)
+				elif roll < 0.6:
+					for q in 3:
+						spawn_pickup(s.pos + Vector2(0, 20), s.z + 10.0, Tuning.PICKUP_HEAL, 0)
 		StationKind.NPC:
 			var npc_def: NpcData = room.npcs[s.ref] if s.ref < room.npcs.size() else null
 			Events.push(Ev.TALK, sx, sy, s.ref, GameState.talks, s.z)
@@ -708,6 +806,7 @@ func step(inp: InputFrame = null) -> void:
 		f.move = auto_walk_dir()
 		f.aim = inp.aim
 	player.tick(f)                                   # 3. player
+	_reveal()                                        #    fog of war, current area
 	if f.use and not walking:
 		interact()                                   # 3a. T: stations, racks, rewards, locals
 	_check_doors()                                   # 3b. walking into an open passage
@@ -751,7 +850,11 @@ func step(inp: InputFrame = null) -> void:
 
 
 ## Run rooms: a fight starts once Bloob has stepped in (or lingered), then its waves play out.
+## Generated maps: their monsters wake as Bloob comes near.
 func _run_phase() -> void:
+	if room.kind == "wilds":
+		Hunt.tick(self)
+		return
 	if phase == Phase.ENTERED and not player.dead and enter_t == 0:
 		engage_t += 1
 		if engage_t >= ENGAGE_TICKS or player.position.distance_to(arrive_at) > ENGAGE_DIST:
@@ -858,7 +961,7 @@ func _run_reward() -> void:
 			for k in 4:
 				spawn_pickup(p.position, p.z + 10.0, Tuning.PICKUP_HEAL, 0)
 			p.hp = minf(p.max_hp, p.hp + p.max_hp * 0.2)
-	if not room.choices.is_empty():
+	if not room.choices.is_empty() and room.kind != "wilds":   # a map's altar stands in its own clearing
 		add_station(StationKind.ALTAR, free_spot(at), -1)
 		Events.push(Ev.ITEM_APPEAR, at.x, at.y, -1, 0, gz)
 

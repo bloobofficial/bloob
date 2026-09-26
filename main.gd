@@ -131,7 +131,7 @@ func _show_end(won: bool) -> void:
 func _process(_delta: float) -> void:
 	if started and world.player.dead and not _end_shown:
 		_show_end(false)
-	if world.phase == World.Phase.COMBAT and (shrine.visible or altar.visible):
+	if (world.phase == World.Phase.COMBAT or world.danger_near()) and (shrine.visible or altar.visible):
 		shrine.close()   # the Shrine and altars are safe-area things
 		altar.close()
 	# a panel over the game eats T / clicks so they don't also act in the world
@@ -213,6 +213,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		View.set_view_width(View.view_width + 80)
 	elif event.is_action_pressed(&"zoom_in"):
 		View.set_view_width(View.view_width - 80)
+	elif event.is_action_pressed(&"map_zoom_in"):
+		hud.minimap.zoom(1)
+	elif event.is_action_pressed(&"map_zoom_out"):
+		hud.minimap.zoom(-1)
 	else:
 		for i in ROOM_KEYS.size():
 			if event.is_action_pressed(StringName("room_%d" % (i + 1))):

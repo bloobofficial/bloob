@@ -16,11 +16,12 @@ const KIND_COLORS := {
 	social = Color(0.35, 0.67, 0.75, 0.45), rest = Color(0.35, 0.67, 0.75, 0.45), safe = Color(0.35, 0.67, 0.75, 0.45),
 	altar = Color(0.62, 0.45, 0.9, 0.5), weapon = Color(0.85, 0.75, 0.35, 0.45), event = Color(0.55, 0.45, 0.8, 0.45),
 	explore = Color(0.55, 0.55, 0.47, 0.35), training = Color(0.55, 0.55, 0.47, 0.35),
+	wilds = Color(0.45, 0.75, 0.4, 0.5),
 }
 ## what an unexplored run room is called on the map
 const KIND_SHORT := {
 	combat = "Fight", elite = "Elite", boss = "Boss", shop = "Shop", start = "Start", safe = "Rest",
-	altar = "Altar", weapon = "Arms", event = "Cache",
+	altar = "Altar", weapon = "Arms", event = "Cache", wilds = "Map",
 }
 
 var room_idx := 0

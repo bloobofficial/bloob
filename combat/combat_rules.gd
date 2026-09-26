@@ -8,6 +8,8 @@ extends RefCounted
 static func damage_enemy(world: World, e: Enemy, amount: float, heavy := false) -> bool:
 	if not e.alive:
 		return false
+	if e.dormant:
+		Hunt.wake(world, e)   # a sleeping monster wakes when struck (sizing itself up first)
 	var d := amount
 	if e.hex_t > 0:
 		d *= Content.skills[SkillData.Id.HEX].p("dmg_taken", 1.5)

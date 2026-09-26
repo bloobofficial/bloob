@@ -1,7 +1,8 @@
 extends Node
 ## The game's art atlas, generated at boot like the prototype's (render/art.ts paintAtlas):
 ##  - Bloob, locals and weapons: pixel art from pose data (effects/art/pixel_art.gd)
-##  - monsters, the totem, station props, trees: vector drawings (effects/art/vector_painter.gd)
+##  - the world's trees, bushes, torches: pixel art (effects/art/world_art.gd)
+##  - monsters, the totem, station props: vector drawings (effects/art/vector_painter.gd)
 ##    rendered once in a SubViewport and sliced into textures
 ## Every frame is 96 x 96 with the feet near the bottom (anchor 0.06). Frame names follow the
 ## prototype ("bloob.run.3", "brute.windup.0", "weapon.sword", "prop.well", "tree.2"), so real
@@ -64,6 +65,17 @@ func _build_pixel_frames() -> void:
 	_put_image("weapon.hammer", PixelArt.hammer().to_image(3))
 	_put_image("weapon.daggers", PixelArt.fang().to_image(4))
 	_put_image("weapon.staff", PixelArt.staff().to_image(2))
+	# the world: pixel trees and bushes, torches and braziers (effects/art/world_art.gd)
+	_put_image("tree.0", WorldArt.tree_round(0))
+	_put_image("tree.1", WorldArt.tree_pine())
+	_put_image("tree.2", WorldArt.tree_round(1))
+	_put_image("tree.3", WorldArt.bush(0))
+	_put_image("tree.4", WorldArt.bush(1))
+	_put_image("rock.0", WorldArt.boulder(0))
+	_put_image("rock.1", WorldArt.boulder(1))
+	for f in 3:
+		_put_image("decor.torch.%d" % f, WorldArt.torch(f))
+		_put_image("decor.brazier.%d" % f, WorldArt.brazier(f))
 
 
 func _bake_vectors() -> void:
@@ -80,11 +92,6 @@ func _bake_vectors() -> void:
 	add.call("prop.board", painter.draw_board)
 	add.call("prop.cache", painter.draw_cache.bind(false))
 	add.call("prop.cache.open", painter.draw_cache.bind(true))
-	add.call("tree.0", painter.draw_tree_round)
-	add.call("tree.1", painter.draw_tree_pine)
-	add.call("tree.2", painter.draw_tree_dead)
-	add.call("tree.3", painter.draw_bush.bind(0))
-	add.call("tree.4", painter.draw_bush.bind(1))
 	for id in MONSTERS:
 		var fn := Callable(painter, "draw_" + id)
 		for clip in ENEMY_CLIPS:

@@ -116,6 +116,7 @@ func _run() -> void:
 	test_world_graph()
 	test_run_plan()
 	await test_run_rooms_load()
+	await test_personal_pathing()
 	await test_run_combat()
 	await test_run_pickups_and_altars()
 	await test_run_shop_and_safe()
@@ -646,7 +647,7 @@ func test_ui() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	check("ui: Wake up starts the run", main.world.running and not main.start_card.visible)
-	check("ui: HUD shows the area, HP and Essence", main.hud._room_name.text == main.world.room.name and main.world.in_run() and main.hud._hp_text.text.begins_with("100") and main.hud._res.text.begins_with("Essence"))
+	check("ui: HUD shows the area, HP and Essence", main.hud._room_name.text == main.world.place_name() and main.world.in_run() and main.hud._hp_text.text.begins_with("100") and main.hud._res.text.begins_with("Essence"))
 	main._open_menu()
 	var ok: bool = get_tree().paused and main.menu.visible
 	for i in PauseMenu.TABS.size():
@@ -665,8 +666,9 @@ func test_ui() -> void:
 	check("ui: the notice board shows the tally", main.board._content.text.contains("Defeated"))
 	main.board.close()
 	main.dev.run("give all 50")
+	var alive_before: int = main.world.enemies.size()
 	main.dev.run("spawn charger 2")
-	check("ui: the dev console gives resources and spawns", GameState.res[0] == 50 and main.world.enemies.size() == 2)
+	check("ui: the dev console gives resources and spawns", GameState.res[0] == 50 and main.world.enemies.size() == alive_before + 2)
 	main.restart("hollow")
 	await get_tree().physics_frame
 	check("ui: room keys / restart start a new run in that room", main.world.room.id == "hollow" and GameState.res[0] == 0)
@@ -709,7 +711,7 @@ func _kinds(plan: RunPlan) -> Array:
 func _signature(plan: RunPlan) -> String:
 	var parts := []
 	for r in plan.rooms:
-		parts.append("%s:%s:%s:%s:%d" % [r.kind, r.name, str(r.waves), str(r.doors.keys()), r.drop_weapon])
+		parts.append("%s:%s:%s:%s:%s" % [r.kind, r.name, "".join(r.layout).md5_text(), str(r.monsters), str(r.doors)])
 	return "|".join(parts)
 
 
@@ -721,14 +723,6 @@ func _room_of(kind: String) -> int:
 	return -1
 
 
-## a seed whose run has a room of this kind in its branch
-func _seed_with(kind: String) -> int:
-	for s in range(1, 200):
-		if _kinds(RunPlan.build(s)).has(kind):
-			return s
-	return 1
-
-
 ## walk out through passage `id` of the current room
 func _walk_out(id: String) -> void:
 	var d := world.map.door_info(id)
@@ -738,59 +732,99 @@ func _walk_out(id: String) -> void:
 	steps(100, dir)
 
 
+## the first area of a kind on the current map ({} if none)
+func _area(kind: String) -> Dictionary:
+	for a in world.room.areas:
+		if a.kind == kind:
+			return a
+	return {}
+
+
+func _area_spot(a: Dictionary) -> Vector2:
+	return world.free_spot(cell(a.cell.x, a.cell.y))
+
+
+## walk Bloob there on foot along the pathfinder's route; true if he arrived
+func _walk_to(target: Vector2, max_ticks := 2400) -> bool:
+	var goal := world.nav.goal_cell(target)
+	var cache := {}
+	for t in max_ticks:
+		var p := world.player.position
+		if p.distance_to(target) < 40.0 or world.map.cell_of(p.x, p.y) == goal:
+			return true
+		var dir := world.nav.flow_dir(p, goal, cache, world.tick_n)
+		if dir == Vector2.ZERO:
+			dir = (target - p).normalized()
+		world.step(frame(dir))
+	return false
+
+
+## the markers of one kind in a layout
+func _count(r: RoomData, ch: String) -> int:
+	var n := 0
+	for row in r.layout:
+		n += row.count(ch)
+	return n
+
+
 func test_run_plan() -> void:
 	var plan := RunPlan.build(42)
 	var kinds := _kinds(plan)
-	check("run: Start -> Combat -> branch -> Combat -> Safe -> Elite -> Boss",
-		plan.rooms.size() == 9 and kinds[0] == "start" and kinds[1] == "combat" and kinds[5] == "combat" and kinds[6] == "safe" and kinds[7] == "elite" and kinds[8] == "boss", str(kinds))
-	var branch: Array = kinds.slice(2, 5)
-	check("run: the branch offers a fight, somewhere to spend and somewhere to grow",
-		branch.has("combat") and (branch.has("shop") or branch.has("event")) and (branch.has("altar") or branch.has("weapon")), str(branch))
-	check("run: the first fight's room has three ways on", plan.rooms[1].doors.size() == 3)
+	check("run: three generated maps, then the boss", kinds == ["wilds", "wilds", "wilds", "boss"], str(kinds))
 	var bad := []
 	for r in plan.rooms:
-		var text := "".join(r.layout)
-		for id in r.doors:
-			var link: Array = r.doors[id]
-			var to := plan.rooms[plan.index_of(link[0])]
-			if not text.contains(id) or not "".join(to.layout).contains(link[1]) or to.entrance != link[1]:
-				bad.append("%s.%s" % [r.id, id])
-		for id in "ABCD":
-			if text.contains(id) and id != r.entrance and not r.doors.has(id):
-				bad.append("%s: stray passage %s" % [r.id, id])
-	check("run: every exit exists and leads to the next room's entrance; other passages are grown over", bad.is_empty(), str(bad))
-	var reach := {plan.rooms[0].id: true}
-	var queue := [plan.rooms[0]]
-	while not queue.is_empty():
-		var r: RoomData = queue.pop_front()
-		for link in r.doors.values():
-			if not reach.has(link[0]):
-				reach[link[0]] = true
-				queue.append(plan.rooms[plan.index_of(link[0])])
-	check("run: every room can be reached and the boss is the end", reach.size() == plan.rooms.size() and plan.rooms[8].doors.is_empty())
-	var fights := plan.rooms.filter(func(r): return r.kind == "combat")
-	check("run: normal fights are 2-4 enemies per wave", fights.all(func(r): return r.waves.all(func(w): return w.size() >= 2 and w.size() <= 4)), str(fights.map(func(r): return r.waves)))
-	check("run: the elite fight has champions, the boss room holds the Barrow King",
-		plan.rooms[7].champions > 0 and plan.rooms[8].waves == [[Content.enemy_index("king")]])
-	check("run: same seed, same run", _signature(RunPlan.build(42)) == _signature(plan))
+		if r.kind != "wilds":
+			continue
+		var ak: Array = r.areas.map(func(a): return a.kind)
+		for need in ["start", "exit", "shop", "altar", "lounge", "loot"]:
+			if not ak.has(need):
+				bad.append("%s: no %s" % [r.id, need])
+		if ak.count("combat") < 2:
+			bad.append("%s: %d glades" % [r.id, ak.count("combat")])
+	check("map: every map has a start, glades, a shop, an altar, a lounge, hidden loot and a gate", bad.is_empty(), str(bad))
+	bad = []
+	for i in plan.rooms.size():
+		var r := plan.rooms[i]
+		if r.kind == "boss":
+			if not r.doors.is_empty() or not "".join(r.layout).contains("C"):
+				bad.append("boss: exits %s" % str(r.doors))
+			continue
+		var next := plan.rooms[i + 1]
+		if r.doors.size() != 1 or not r.doors.has("A") or r.doors.A[0] != next.id or r.doors.A[1] != next.entrance:
+			bad.append("%s: doors %s" % [r.id, str(r.doors)])
+		if _count(r, "A") != 4 or _count(r, "B") + _count(r, "C") + _count(r, "D") != 0:
+			bad.append("%s: gate cells %d" % [r.id, _count(r, "A")])
+	check("map: one gate out of each map, leading to the next; the boss is the end", bad.is_empty(), str(bad))
+	bad = []
+	for r in plan.rooms:
+		if r.kind != "wilds":
+			continue
+		if r.monsters.size() != Tuning.MAP_MONSTERS:
+			bad.append("%s: %d monsters" % [r.id, r.monsters.size()])
+		for m in r.monsters:
+			var z: String = r.zones[m.cell.y][m.cell.x]
+			if z == " " or r.areas[z.unicode_at(0) - 48].kind != "combat":
+				bad.append("%s: a monster outside the glades at %s" % [r.id, str(m.cell)])
+	check("map: only four monsters per map, all in the glades", bad.is_empty(), str(bad))
+	bad = []
+	for r in plan.rooms:
+		if r.kind != "wilds":
+			continue
+		var loot: int = r.areas.filter(func(a): return a.kind == "loot").size()
+		if _count(r, "W") != 3 or _count(r, "S") != 1 or _count(r, "H") != 1 or _count(r, "L") != 1 or _count(r, "X") != loot or _count(r, "P") != r.npcs.size() or r.npcs.size() != 2:
+			bad.append("%s: W%d S%d H%d L%d X%d/%d P%d npcs %d" % [r.id, _count(r, "W"), _count(r, "S"), _count(r, "H"), _count(r, "L"), _count(r, "X"), loot, _count(r, "P"), r.npcs.size()])
+		if r.offers.size() != 3 or r.choices.size() != 3:
+			bad.append("%s: stock" % r.id)
+	check("map: shop wares, an altar, a well, a notice board, a cache per grove and two keepers", bad.is_empty(), str(bad))
+	check("run: same seed, same maps", _signature(RunPlan.build(42)) == _signature(plan))
 	var sigs := {}
+	var layouts := {}
 	for s in [1, 2, 3, 4, 5, 6]:
-		sigs[_signature(RunPlan.build(s))] = true
-	check("run: different seeds, different runs", sigs.size() >= 5, "%d distinct of 6" % sigs.size())
-	# every module can grow a passage on every side
-	var carve_ok := true
-	for id in RunPlan.COMBAT_MODULES + ["forge", "lounge", "wayshrine", "overlook", "sanctum", "barrow", "arena", "yard"]:
-		for side in "ABCD":
-			var rows := []
-			var w := 0
-			for row in Content.module(id).layout:
-				w = maxi(w, row.length())
-			for row in Content.module(id).layout:
-				rows.append(row.rpad(w))
-			if not "".join(rows).contains(side) and not RunPlan._carve(rows, side):
-				carve_ok = false
-				print("      can't carve %s in %s" % [side, id])
-	check("run: every module can open a passage on any side", carve_ok)
+		var pl := RunPlan.build(s)
+		sigs[_signature(pl)] = true
+		layouts["".join(pl.rooms[0].layout).md5_text()] = true
+	check("run: different seeds, different maps", sigs.size() == 6 and layouts.size() == 6, "%d / %d distinct of 6" % [sigs.size(), layouts.size()])
+	check("run: the maps of one run differ from each other", "".join(plan.rooms[0].layout) != "".join(plan.rooms[1].layout) and "".join(plan.rooms[1].layout) != "".join(plan.rooms[2].layout))
 
 
 func test_run_rooms_load() -> void:
@@ -811,63 +845,123 @@ func test_run_rooms_load() -> void:
 		if r.encounter and world.phase != World.Phase.ENTERED:
 			ok = false
 			why += " %s: fight didn't wait" % r.id
-		if not r.encounter and not world.doors_open:
+		if r.kind == "wilds" and (world.doors_open or world.enemies.size() != 4 or not world.enemies.all(func(e): return e.dormant)):
 			ok = false
-			why += " %s: safe room sealed" % r.id
-	check("run: every room loads, you arrive inside, safe rooms are open, fights wait for you", ok, why)
+			why += " %s: gate open or monsters awake" % r.id
+		if r.kind != "wilds":
+			continue
+		# everything on the map can be reached on foot from where you arrive
+		for a in r.areas:
+			if not world.nav.reachable(p, world.nav.goal_cell(_area_spot(a))):
+				ok = false
+				why += " %s: can't reach the %s" % [r.id, a.kind]
+		var gate := world.map.door_info("A")
+		if not world.nav.reachable(p, world.nav.goal_cell(Vector2(gate.in_x, gate.in_y))):
+			ok = false
+			why += " %s: can't reach the gate" % r.id
+		for s in world.stations:
+			if not world.nav.reachable(p, world.nav.goal_cell(s.pos + Vector2(0, 36))) and not world.nav.reachable(p, world.nav.goal_cell(s.pos + Vector2(0, -36))):
+				ok = false
+				why += " %s: can't reach station %d" % [r.id, s.kind]
+	check("run: every map loads, you arrive inside, and every area, station and the gate can be reached on foot", ok, why)
+
+
+func test_personal_pathing() -> void:
+	await fresh_run(42)
+	world.player.god = true
+	world.dev.passive = true
+	var entered := count(Ev.ROOM_ENTER)
+	var names := {}
+	var reached := []
+	for kind in ["shop", "altar", "lounge"]:
+		var a := _area(kind)
+		if _walk_to(_area_spot(a)):
+			reached.append(kind)
+		names[world.place_name()] = true
+	check("pathing: walk from the start to the shop, the altar and the lounge", reached.size() == 3, str(reached))
+	check("pathing: no hard cuts: it's all one map (no room change on the way)", world.room_idx == 0 and count(Ev.ROOM_ENTER) == entered)
+	check("pathing: the HUD names the area you're in", names.has("Shop") and names.has("Altar") and names.has("Lounge"), str(names.keys()))
+	var seen := 0
+	for c in world.explored:
+		seen += c
+	check("minimap: walking uncovers the map (fog of war) and marks the areas visited",
+		seen > 400 and world.reveal_log.size() == seen and world.areas_seen.size() >= 4, "seen=%d areas=%d" % [seen, world.areas_seen.size()])
+	var mm := Minimap.new()
+	mm.world = world
+	add_child(mm)
+	mm.zoom(-5)
+	var z0 := mm.zoom_i
+	mm.zoom(1)
+	mm.zoom(1)
+	mm.zoom(1)
+	check("minimap: zooms in and out between whole-map and close views", z0 == 0 and mm.zoom_i == Minimap.ZOOMS.size() - 1)
+	mm.queue_free()
+	world.dev.passive = false
 
 
 func test_run_combat() -> void:
 	await fresh_run(42)
-	world.spawning = true
-	world.load_room(1, "C")
-	check("room state: entering a combat room = Entered, exits shut, nothing spawned yet",
-		world.phase == World.Phase.ENTERED and not world.doors_open and world.enemies.is_empty() and world.pending.is_empty())
-	steps(10)
-	check("room state: the fight hasn't started a moment after arriving", world.phase == World.Phase.ENTERED)
-	world.player.god = true
-	steps(60, Vector2.UP)
-	check("room state: stepping in starts the fight (Combat Active), exits sealed",
-		world.phase == World.Phase.COMBAT and not world.doors_open and count(Ev.DOORS_SEALED) == 1 and count(Ev.ENGAGE) == 1)
-	check("encounter: spawns are telegraphed before anything appears", world.pending.size() == world.room.waves[0].size() and world.enemies.is_empty())
+	var p := world.player
+	check("hunt: four monsters lie asleep in their glades; the gate is shut; nothing else seals",
+		world.enemies.size() == 4 and world.enemies.all(func(e): return e.dormant) and not world.doors_open and world.phase == World.Phase.ENTERED and count(Ev.DOORS_SEALED) == 0)
+	var homes := world.enemies.map(func(e): return e.home)
 	steps(120)
-	var first: Array = world.room.waves[0]
-	check("encounter: the first wave arrives after its telegraph", world.enemies.size() == first.size() and count(Ev.SPAWN_TELL) >= first.size(),
-		"alive=%d wave=%d" % [world.enemies.size(), first.size()])
-	check("encounter: every enemy fights with a telegraphed attack, never by touch",
-		world.enemies.all(func(e): return e.atk != null) and not world.mode.contact)
-	check("encounter: spawns keep their distance from Bloob", world.enemies.all(func(e): return e.position.distance_to(world.player.position) > 120.0))
-	var guard := 0
+	var stay := true
+	for i in world.enemies.size():
+		stay = stay and world.enemies[i].dormant and world.enemies[i].position.distance_to(homes[i]) < 110.0
+	check("hunt: asleep, they only stroll about where they lie", stay)
+	# pick up the weapon at the start, then walk up to one of them
+	var drop = _station(World.StationKind.DROP)
+	place(drop.pos)
+	steps(1, Vector2.ZERO, {use = true})
+	var wd := GameState.weapon_data()
+	var e: Enemy = world.enemies[0]
+	world.player.god = true
+	place(world.free_spot(e.position + Vector2(0, Tuning.WAKE_DIST - 60.0)))
+	events.clear()
+	steps(2)
+	var pack := world.enemies.filter(func(o): return o.position.distance_to(e.position) < Tuning.PACK_DIST)
+	check("hunt: coming close wakes it, and its pack with it", not e.dormant and pack.all(func(o): return not o.dormant) and count(Ev.ENGAGE) >= 1)
+	var per_combo := wd.combo_damage() * GameState.job_data().dmg_mul
+	check("toughness: a monster takes about two full combos of the weapon in hand",
+		absf(e.max_hp / per_combo - Tuning.COMBOS_TO_KILL) < 0.2, "hp %.1f vs %.1f per combo (%s)" % [e.max_hp, per_combo, wd.name])
+	# prove it with the real combo: hold attack next to it
+	world.dev.freeze_ai = true
+	e.knock_mul = 0.0
+	var combos := 0
+	var last_step := 0
+	var alive_after_one := false
+	for t in 900:
+		if not e.alive:
+			break
+		place(e.position + Vector2(-26, 0))
+		world.step(frame(Vector2.ZERO, {atk = true, aim = e.position}))
+		var st := p.melee.atk_step
+		if st == 1 and last_step != 1:
+			combos += 1
+			if combos == 2:
+				alive_after_one = e.alive
+		last_step = st
+	check("toughness: one full combo doesn't kill it; it falls to the second or third", alive_after_one and not e.alive and combos >= 2 and combos <= 3, "combos=%d alive_after_one=%s" % [combos, alive_after_one])
+	world.dev.freeze_ai = false
+	# the rest fall: the map is cleared and the gate opens
 	var ess0 := GameState.essence_total
-	while not world.doors_open and guard < 60:
-		for e in world.enemies.duplicate():
-			CombatRules.kill_enemy(world, e, false)
-		steps(30)
-		guard += 1
-	check("room state: all waves down = Cleared, exits open", world.doors_open and world.phase == World.Phase.CLEARED and world.room_state().cleared and count(Ev.ROOM_CLEARED) == 1,
-		"guard=%d spawned=%d budget=%d" % [guard, world.spawned, world.budget()])
-	check("encounter: exactly the rolled enemies came out", world.spawned == world.budget())
+	for o in world.enemies.duplicate():
+		CombatRules.kill_enemy(world, o, false)
+	steps(3)
+	check("hunt: all four down = cleared, the gate opens", world.doors_open and world.phase == World.Phase.CLEARED and world.room_state().cleared and count(Ev.ROOM_CLEARED) == 1)
 	steps(200)
 	check("currency: kills and the clear spill Essence", GameState.essence_total > ess0, "essence=%d" % GameState.essence_total)
-	if world.room.reward_kind == "weapon":
-		var drop = null
-		for s in world.stations:
-			if s.kind == World.StationKind.DROP and s.active:
-				drop = s
-		check("reward: this room's weapon lies waiting once it's cleared", drop != null and drop.ref == world.room.drop_weapon)
-	else:
-		check("reward: this room rewarded %s" % world.room.reward_kind, world.room.reward_kind in ["essence", "heal"])
-	# onward: through an exit to the room it names
-	var exit_id: String = world.room.doors.keys()[0]
-	var target: String = world.room.doors[exit_id][0]
-	_walk_out(exit_id)
-	check("passages: walking out of an exit takes you to the room it leads to", world.room.id == target, "%s -> %s" % [world.room.id, target])
-	var before := world.room.id
-	world.load_room(world.room_idx, "C")
-	_walk_out("C")
-	check("passages: the way you came in stays shut (runs go forward)", world.room.id == before)
-	world.load_room(1, "C")
-	check("room state: a cleared room stays cleared", world.phase == World.Phase.CLEARED and world.doors_open and world.enemies.is_empty())
+	var first := "".join(world.room.layout)
+	var d := world.map.door_info("A")
+	place(Vector2(d.in_x, d.in_y))
+	for t in 200:
+		if world.room.id != "wilds_0":
+			break
+		world.step(frame(Vector2.UP))
+	check("gate: walking through it takes you to the next map, fresh and different", world.room.id == "wilds_1" and "".join(world.room.layout) != first and world.enemies.size() == 4)
+	var sp := world.player.position
+	check("gate: you arrive at the new map's start", sp.distance_to(Vector2(world.map.start.x, world.map.start.y)) < 60.0, "%.0f away" % sp.distance_to(Vector2(world.map.start.x, world.map.start.y)))
 
 
 func test_run_pickups_and_altars() -> void:
@@ -876,7 +970,7 @@ func test_run_pickups_and_altars() -> void:
 	for s in world.stations:
 		if s.kind == World.StationKind.DROP:
 			drop = s
-	check("weapons: a weapon lies in the first room", drop != null and drop.active and drop.ref == world.run.start_weapon)
+	check("weapons: a weapon lies at the start", drop != null and drop.active and drop.ref == world.run.start_weapon)
 	place(drop.pos)
 	steps(1, Vector2.ZERO, {use = true})
 	check("pickup: T takes it; bare paws aren't left behind", GameState.weapon == world.run.start_weapon and not drop.active)
@@ -904,7 +998,8 @@ func test_run_pickups_and_altars() -> void:
 		scaled.windup <= sw.windup and scaled.recover < sw.recover and scaled.range > sw.range)
 	p.melee.cancel()
 	steps(20)
-	var e := dummy(0, p.position + Vector2(40, 0))
+	var e := dummy(0, world.free_spot(p.position + Vector2(40, 0)))
+	place(e.position + Vector2(-40, 0))
 	var hp_before := e.hp
 	steps(12, Vector2.ZERO, {atk = true, aim = e.position})
 	var dealt := hp_before - e.hp
@@ -914,87 +1009,78 @@ func test_run_pickups_and_altars() -> void:
 	steps(1, Vector2.DOWN, {dodge = true})
 	check("skills: Quick Step shortens the dodge cooldown", p.dodge_cd == roundi(Tuning.DODGE_CD * 0.8), "cd=%d" % p.dodge_cd)
 	check("skills: they're kept for the Skills tab", GameState.passives.size() == 5)
-	# altar: three choices, pick one, the altar goes dark
+	# the map's altar: three choices, pick one, the altar goes dark
 	steps(30)
-	world.room.choices = PackedStringArray(["mana_flow", "iron_hide", "greed"])
-	var alt := world.add_station(World.StationKind.ALTAR, world.free_spot(p.position + Vector2(0, 60)), -1)
-	place(alt.pos + Vector2(0, -30))
+	var alt = _station(World.StationKind.ALTAR)
+	check("altar: the map's altar offers three skills", alt != null and alt.active and world.altar_choices().size() == 3)
+	place(world.free_spot(alt.pos + Vector2(0, 40)))
+	steps(12)
 	var opened := [false]
 	world.station_opened.connect(func(k): opened[0] = k == 3, CONNECT_ONE_SHOT)
 	steps(1, Vector2.ZERO, {use = true})
 	check("altar: T opens it", opened[0])
-	check("altar: taking a skill applies it and puts the altar out", world.choose_at_altar(1) and GameState.passives.has("iron_hide") and is_equal_approx(GameState.dmg_taken_mul, 0.88) and not alt.active)
+	var pick: String = world.altar_choices()[1]
+	var before := GameState.passives.size()
+	check("altar: taking a skill applies it and puts the altar out", world.choose_at_altar(1) and GameState.passives.size() == before + 1 and GameState.passives.has(pick) and not alt.active)
 	check("altar: a dark altar gives nothing more", not world.choose_at_altar(0))
+	world.take_passive("iron_hide")
 	var hp1 := p.hp
 	p.invuln = 0
+	p.god = false
+	var taken_mul := GameState.dmg_taken_mul
 	p.hurt(10.0, p.position + Vector2(10, 0))
-	check("skills: Iron Hide takes the edge off hits", is_equal_approx(hp1 - p.hp, 8.8), "took %.2f" % (hp1 - p.hp))
-	# elites raise an altar when they fall
-	await fresh_run(42)
-	world.load_room(_room_of("elite"), "C")
-	world.player.god = true
-	Waves.engage(world)
-	var guard := 0
-	while not world.doors_open and guard < 60:
-		steps(30)
-		for en in world.enemies.duplicate():
-			CombatRules.kill_enemy(world, en, false)
-		guard += 1
-	var altars := world.stations.filter(func(s): return s.kind == World.StationKind.ALTAR and s.active)
-	check("elite: champions among them, and clearing it raises an altar with three skills", world.doors_open and altars.size() == 1 and world.altar_choices().size() == 3 and count(Ev.CHAMPION) >= 1)
+	check("skills: Iron Hide takes the edge off hits", is_equal_approx(hp1 - p.hp, 10.0 * taken_mul) and taken_mul < 1.0, "took %.2f" % (hp1 - p.hp))
 
 
 func test_run_shop_and_safe() -> void:
-	await fresh_run(_seed_with("shop"))
-	world.load_room(_room_of("shop"), "C")
+	await fresh_run(42)
 	var offers := world.stations.filter(func(s): return s.kind == World.StationKind.OFFER)
-	check("shop: a walkable room with three wares (weapon, skill, healing)", offers.size() == 3 and world.doors_open
+	check("shop: three wares (weapon, skill, healing), no monster near", offers.size() == 3 and not world.danger_near()
 		and world.room.offers.map(func(o): return o.type) == ["weapon", "skill", "heal"])
 	check("shop: prices 20 / 25 / 15 Essence", world.room.offers.map(func(o): return o.price) == [20, 25, 15])
 	var p := world.player
 	p.hp = 40.0
-	place(offers[2].pos + Vector2(0, 36))
+	place(world.free_spot(offers[2].pos + Vector2(0, 36)))
 	steps(1, Vector2.ZERO, {use = true})
 	check("shop: can't buy without the Essence", p.hp == 40.0 and not world.room.offers[2].sold and count(Ev.DENIED) == 1)
 	GameState.add_essence(100)
 	steps(12)
 	steps(1, Vector2.ZERO, {use = true})
 	check("shop: healing restores 30% HP for 15", world.room.offers[2].sold and absf(p.hp - (40.0 + p.max_hp * 0.3)) < 1.0 and GameState.essence == 85, "hp=%.1f ess=%d" % [p.hp, GameState.essence])
-	place(offers[1].pos + Vector2(0, 36))
+	place(world.free_spot(offers[1].pos + Vector2(0, 36)))
 	steps(12)
 	steps(1, Vector2.ZERO, {use = true})
 	check("shop: a skill for 25 joins your skills", GameState.passives.size() == 1 and GameState.essence == 60)
 	world.equip(Content.weapon_index("sword") if world.room.offers[0].ref != Content.weapon_index("sword") else Content.weapon_index("spear"))
 	var held := GameState.weapon
-	place(offers[0].pos + Vector2(0, 36))
+	var drops_before := world.stations.filter(func(s): return s.kind == World.StationKind.DROP and s.active and s.ref == held).size()
+	place(world.free_spot(offers[0].pos + Vector2(0, 36)))
 	steps(12)
 	steps(1, Vector2.ZERO, {use = true})
 	var dropped := world.stations.filter(func(s): return s.kind == World.StationKind.DROP and s.active and s.ref == held)
-	check("shop: buying a weapon equips it and drops the old one", GameState.weapon == world.room.offers[0].ref and dropped.size() == 1 and GameState.essence == 40)
-	# safe room: a well that mends once
-	world.load_room(_room_of("safe"), "C")
+	check("shop: buying a weapon equips it and drops the old one", GameState.weapon == world.room.offers[0].ref and dropped.size() == drops_before + 1 and GameState.essence == 40)
+	# the lounge: a well that mends once, the notice board, a keeper
 	var well = _station(World.StationKind.WELL)
-	check("safe room: no enemies, exits open, a well", world.encounter == null and world.doors_open and well != null)
+	check("lounge: a well, a notice board and a keeper to talk to", well != null and _station(World.StationKind.BOARD) != null
+		and world.stations.filter(func(s): return s.kind == World.StationKind.NPC).size() == 2)
 	p.hp = 20.0
 	p.mana = 0.0
-	place(well.pos + Vector2(0, 36))
+	place(world.free_spot(well.pos + Vector2(0, 36)))
 	steps(1, Vector2.ZERO, {use = true})
-	check("safe room: the well restores HP and mana", p.hp == p.max_hp and p.mana == p.max_mana)
-	check("safe room: it mends you only once", not well.active)
-	# a hidden cache: Essence, no fight
-	await fresh_run(_seed_with("event"))
-	world.load_room(_room_of("event"), "C")
+	check("lounge: the well restores HP and mana", p.hp == p.max_hp and p.mana == p.max_mana)
+	check("lounge: it mends you only once", not well.active)
+	# hidden loot: a cache at the end of an overgrown trail
 	var cache = _station(World.StationKind.CACHE)
 	var e0 := GameState.essence_total
-	place(cache.pos + Vector2(0, 36))
+	place(world.free_spot(cache.pos + Vector2(0, 36)))
 	steps(1, Vector2.ZERO, {use = true})
 	steps(240)
-	check("cache: opening it spills Essence", not cache.active and GameState.essence_total > e0)
+	check("hidden loot: opening the cache spills Essence", not cache.active and GameState.essence_total > e0)
 
 
 func test_archetypes_and_boss() -> void:
 	await fresh_run(42)
-	world.load_room(1, "C")
+	world.load_room(_room_of("boss"), "C")
 	world.phase = World.Phase.COMBAT
 	world.doors_open = false
 	var p := world.player

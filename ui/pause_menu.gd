@@ -318,16 +318,30 @@ func _items() -> void:
 func _map() -> void:
 	var r := world.room
 	_h3("Map")
+	if world.in_run():
+		_text("You are in [b]%s[/b], %s. %s" % [world.place_name(), r.name, r.blurb])
+		var m := Minimap.new()
+		m.world = world
+		m.box = Vector2(600, 330)
+		m.zoom_i = 0
+		m.show_title = false
+		_page.add_child(m)
+		_text("[color=#ffffff]▲[/color] You   [color=#6b80ff]●[/color] Altar   [color=#59d973]●[/color] Shop   [color=#f25952]●[/color] Lounge / safe room   [color=#fac84d]■[/color] Hidden loot   [color=#fad980]∩[/color] Gate (red while shut)   [color=#ff4d40]•[/color] Monster awake   ┅ Not explored yet")
+		var route := PackedStringArray()
+		for i in world.rooms.size():
+			var name := RunPlan.describe(world.rooms[i])
+			route.append("[b]%s[/b]" % name if i == world.room_idx else ("[color=#9a93a8]%s[/color]" % name if i < world.room_idx else name))
+		_text("The way: " + "  →  ".join(route))
+		return
 	_text("You are in [b]%s[/b]. %s" % [r.name, r.blurb])
-	var m := WorldMapView.new()
-	m.use_rooms(world.rooms, world.in_run())
-	m.label_chars = 0
-	m.box = Vector2(110, 60)
-	m.gap = Vector2(24, 20)
-	m.label_chars = 0
-	m.font_size = 12
-	_page.add_child(m)
-	m.refresh(world.room_idx)
+	var wm := WorldMapView.new()
+	wm.use_rooms(world.rooms, world.in_run())
+	wm.box = Vector2(110, 60)
+	wm.gap = Vector2(24, 20)
+	wm.label_chars = 0
+	wm.font_size = 12
+	_page.add_child(wm)
+	wm.refresh(world.room_idx)
 	_text("[color=#c44a3a]■[/color] Danger   [color=#8c8c78]■[/color] Cleared   [color=#d9a74a]■[/color] Home   [color=#e68c46]■[/color] Forge   [color=#5aaabe]■[/color] Rest & friends   □ Not explored")
 
 
@@ -359,7 +373,7 @@ func _system() -> void:
 	vol.add_child(slider)
 	_page.add_child(vol)
 	_h4("Controls")
-	_text("WASD move · Mouse aim\nL-click / J  weapon combo · in the air: air swing\nR-click / K  goo spit\nSpace  jump · up one ledge\nShift  dodge · in the air: dive slam\nDodge as a hit lands: perfect dodge\nQ / E  job skills (mana)\nF  flask\nT  use · talk · take\nEsc / Tab  this menu\n[ ]  camera tilt    - =  zoom\nM  mute    P  pause")
+	_text("WASD move · Mouse aim\nL-click / J  weapon combo · in the air: air swing\nR-click / K  goo spit\nSpace  jump · up one ledge\nShift  dodge · in the air: dive slam\nDodge as a hit lands: perfect dodge\nQ / E  job skills (mana)\nF  flask\nT  use · talk · take\nEsc / Tab  this menu\n, .  or wheel  minimap zoom\n[ ]  camera tilt    - =  zoom\nM  mute    P  pause")
 	_text("[color=#9a93a8]Controller: left stick move, right stick aim, X attack, A jump, B dodge, RB / RT spit, LB / LT skills, D-pad down flask, Y use, Start menu.[/color]")
 	_h4("Developer")
 	_text("`  dev console    F2  performance    H  hitboxes\n1–4  jump to an area (new run)    R  restart    G  god mode")

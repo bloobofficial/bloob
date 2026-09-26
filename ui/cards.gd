@@ -7,8 +7,8 @@ static func start_card() -> ModalPanel:
 	var c := ModalPanel.new("Bloob", "", 640)
 	c.closable = false
 	var t := UiStyle.rich(13)
-	t.text = "Every run is a short path through the wild: [b]fight[/b], choose which [b]passage[/b] to take, find [b]weapons[/b], gain [b]skills[/b] at altars, spend [b]Essence[/b] in shops, rest in a safe room, then face an [b]elite[/b] fight and the [b]Barrow King[/b]. Die, and it all starts over on a new path.\n\n" \
-		+ "Rooms seal when a fight starts and open when it's won. Enemies [b]telegraph[/b] every attack: a red zone on the ground and a closing ring. Dodge as it lands for a [b]perfect dodge[/b]. Walk up to weapons, altars, pedestals and wells and press [b]T[/b].\n\n" \
+	t.text = "Every run crosses [b]three wild maps[/b], each one new: open woods of connected places you can walk anywhere in. Find a [b]weapon[/b], trade [b]Essence[/b] at the [b]shop[/b], take a [b]skill[/b] at the altar, rest in the [b]lounge[/b], and follow the overgrown trails to [b]hidden loot[/b]. Then face the [b]Barrow King[/b]. Die, and it all starts over on new maps.\n\n" \
+		+ "Four monsters sleep in every map's glades; get close and they wake. Put all four down and the [b]gate[/b] opens. Enemies [b]telegraph[/b] every attack: a red zone on the ground and a closing ring. Dodge as it lands for a [b]perfect dodge[/b]. Walk up to weapons, altars, pedestals and wells and press [b]T[/b]. The minimap fills in as you explore ([b], .[/b] or the wheel to zoom).\n\n" \
 		+ "[b]WASD[/b] move · [b]mouse[/b] aim · [b]L-click / J[/b] weapon combo · [b]R-click / K[/b] goo spit · [b]Space[/b] jump · [b]Shift[/b] dodge (dive slam in the air) · [b]Q / E[/b] job skills · [b]F[/b] flask · [b]Esc[/b] menu · [b]`[/b] dev console.\n\n" \
 		+ "[color=#9a93a8]Controller: left stick move, right stick aim, X attack, A jump, B dodge, RB spit, LB / LT skills, Y use, Start menu.[/color]"
 	c.body.add_child(t)

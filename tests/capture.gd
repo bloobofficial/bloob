@@ -39,6 +39,10 @@ func _run() -> void:
 		get_tree().quit()
 		return
 	main.begin()
+	if scenario == "map":
+		await _map_tour(main, int(room), dir)
+		get_tree().quit()
+		return
 	if scenario == "run":
 		await _run_tour(main, int(room), dir)
 		get_tree().quit()
@@ -135,7 +139,20 @@ func _run_tour(main: Node, seed_value: int, dir: String) -> void:
 		world.player.god = true
 		await _frames(30)
 		var tag := "run_%02d_%s" % [i, r.kind]
-		if r.encounter:
+		if r.encounter and r.kind == "wilds":
+			for e in world.enemies:
+				Hunt.wake(world, e)
+			await _ticks(60)
+			await _shot(dir, tag + "_awake")
+			var g := 0
+			while not world.doors_open and g < 20:
+				for e in world.enemies.duplicate():
+					CombatRules.kill_enemy(world, e, false)
+				await _frames(10)
+				g += 1
+			await _frames(50)
+			await _shot(dir, tag + "_cleared")
+		elif r.encounter:
 			Waves.engage(world)
 			await _ticks(40)
 			await _shot(dir, tag + "_tell")
@@ -167,6 +184,55 @@ func _run_tour(main: Node, seed_value: int, dir: String) -> void:
 	world.player.hurt(9999, world.player.position + Vector2(10, 0))
 	await _frames(90)
 	await _shot(dir, "run_99_death")
+
+
+## "map" scenario: a run's first map (seed = the room argument): the start, then a stop in
+## every area, a fight in a glade, and the minimap at each zoom:
+## godot res://tests/capture.tscn -- <seed> <out dir> map
+func _map_tour(main: Node, seed_value: int, dir: String) -> void:
+	var t0 := Time.get_ticks_msec()
+	main.restart("", seed_value)
+	print("PERF new run + first map: %d ms" % (Time.get_ticks_msec() - t0))
+	var world: World = main.world
+	await _frames(40)
+	# frame cost while standing in the start clearing
+	var ph := 0.0
+	var pr := 0.0
+	var frames := 0
+	var t1 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t1 < 3000:
+		await get_tree().process_frame
+		frames += 1
+		ph += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+		pr += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	print("PERF map: %.1f fps (software renderer), physics %.2f ms, process %.2f ms, nodes %d" % [frames / 3.0, ph / frames, pr / frames, Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
+	await _shot(dir, "map_00_start")
+	world.player.god = true
+	var C := float(Tuning.CELL)
+	var k := 1
+	for a in world.room.areas:
+		var at := world.free_spot(Vector2((a.cell.x + 0.5) * C, (a.cell.y + 2.5) * C))
+		world.player.place(at, world.map.ground_at(at.x, at.y))
+		main.snap_camera()
+		await _ticks(30)
+		await _shot(dir, "map_%02d_%s" % [k, a.kind])
+		k += 1
+	# wake a glade and fight
+	for e in world.enemies:
+		if e.alive:
+			world.player.place(e.position + Vector2(0, 150), e.z)
+			main.snap_camera()
+			break
+	await _ticks(90)
+	await _shot(dir, "map_%02d_fight" % k)
+	for zi in 3:
+		main.hud.minimap.zoom_i = zi
+		await _frames(3)
+		await _shot(dir, "map_zoom_%d" % zi)
+	main._open_menu()
+	main.menu.show_tab(PauseMenu.TABS.find("Map"))
+	await _frames(5)
+	await _shot(dir, "map_menu")
 
 
 func _ticks(n: int) -> void:

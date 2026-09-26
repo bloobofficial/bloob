@@ -25,7 +25,8 @@ var _banner: Label
 var _room_name: Label
 var _objective: Label
 var _res: Label
-var _minimap: WorldMapView
+var _sub: Label
+var minimap: Minimap
 var _lvl: Label
 var _job: Label
 var _status: Label
@@ -104,21 +105,20 @@ func _build() -> void:
 	_room_name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
 	_room_name.add_theme_constant_override("outline_size", 4)
 	tl.add_child(_room_name)
-	tl.add_child(UiStyle.label("THE BLOOB · GODOT PORT OF v0.9", 9, UiStyle.ASH))
+	_sub = UiStyle.label("THE BLOOB", 9, UiStyle.ASH)
+	tl.add_child(_sub)
 	_objective = UiStyle.label("", 11, UiStyle.ASH)
 	tl.add_child(_objective)
 	_res = UiStyle.label("", 11)
 	tl.add_child(_res)
-	# world map (top right)
+	# minimap (top right)
 	var mm := UiStyle.panel(0.7)
 	mm.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	mm.position = Vector2(-16, 14)
 	mm.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_minimap = WorldMapView.new()
-	_minimap.box = Vector2(46, 22)
-	_minimap.gap = Vector2(10, 9)
-	_minimap.label_chars = 5
-	mm.add_child(_minimap)
+	minimap = Minimap.new()
+	minimap.box = Vector2(236, 170)
+	mm.add_child(minimap)
 	root.add_child(mm)
 	# vitals (bottom left)
 	var vit := UiStyle.panel()
@@ -391,10 +391,23 @@ func _process(_delta: float) -> void:
 	_flask.text = "●".repeat(GameState.flask) + "○".repeat(maxi(0, GameState.flask_max - GameState.flask))
 	_dodge.modulate = Color(1, 1, 1, 1.0 if p.dodge_cd == 0 else 0.35)
 	# top left
-	_room_name.text = world.room.name
+	minimap.world = world
+	_room_name.text = world.place_name()
+	var wilds: bool = world.room.kind == "wilds"
+	if wilds:
+		_sub.text = "MAP %d OF %d  ·  %s" % [world.room.map_no + 1, RunPlan.MAPS, world.room.name.to_upper()]
+	elif world.in_run():
+		_sub.text = "THE LAST GATE  ·  %s" % world.room.name.to_upper()
+	else:
+		_sub.text = "THE BLOOB · HUB WORLD"
 	var rem := world.remaining()
 	var obj: String
-	if world.room.encounter == null:
+	if wilds and not world.room_state().cleared:
+		var awake := Hunt.awake(world)
+		obj = "Hunt · %d of %d monsters remain%s" % [rem, world.budget(), " · %d awake" % awake if awake > 0 else " · the gate opens when they fall"]
+	elif wilds:
+		obj = "The gate is open · go on when you're ready" if not world.run_over else "The run is won"
+	elif world.room.encounter == null:
 		obj = SAFE_LABEL.get(world.room.kind, "Safe")
 	elif world.encounter == null or world.room_state().cleared:
 		obj = "Cleared · passages open" if not world.run_over else "The run is won"
@@ -407,7 +420,7 @@ func _process(_delta: float) -> void:
 	else:
 		obj = "Passages sealed · %d left" % rem
 	_objective.text = obj
-	_objective.add_theme_color_override("font_color", UiStyle.ASH if world.doors_open else UiStyle.BLOOD)
+	_objective.add_theme_color_override("font_color", UiStyle.BLOOD if not world.doors_open and (not wilds or Hunt.awake(world) > 0) else UiStyle.ASH)
 	if world.in_run():
 		_res.text = "Essence %d" % GameState.essence
 		_res.add_theme_color_override("font_color", Tuning.ESSENCE_COLOR)
@@ -417,8 +430,6 @@ func _process(_delta: float) -> void:
 			rs.append("%s %d" % [Tuning.RES_NAMES[k], GameState.res[k]])
 		_res.text = "   ".join(rs)
 		_res.add_theme_color_override("font_color", UiStyle.BONE)
-	_minimap.use_rooms(world.rooms, world.in_run())
-	_minimap.refresh(world.room_idx)
 	_update_boss()
 	_update_prompt()
 	_update_bubble()
@@ -477,6 +488,11 @@ func _update_prompt() -> void:
 					else:
 						var can := GameState.can_afford(wd.cost)
 						html = "%s Buy the %s [color=%s]%s[/color]%s" % [T, wd.name, "#d9a74a" if can else "#e0453a", Tuning.cost_text(wd.cost), stats]
+		elif not world.doors_open and world.room.kind == "wilds":
+			for d in world.map.doors:
+				if Vector2(d.cx, d.cy).distance_to(p.position) < 160 and world.room.doors.has(d.id):
+					html = "The gate is shut [color=#9a93a8]· %d monsters still roam this wood[/color]" % world.remaining()
+					break
 		elif world.doors_open:
 			# near an open passage: say where it leads
 			for d in world.map.doors:

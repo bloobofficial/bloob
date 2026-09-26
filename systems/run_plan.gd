@@ -1,24 +1,34 @@
 class_name RunPlan
 extends RefCounted
-## One run's map: a short chain of rooms with a branch, built from reusable room modules.
+## One run: a few generated maps, then the Barrow King.
 ##
-##   Start -> Combat -> ( Combat | Shop or Cache | Altar or Weapon ) -> Combat -> Safe -> Elite -> Boss
+##   Map 1 -> Map 2 -> Map 3 -> Boss
 ##
-## Each node is a runtime copy of a hand-made room (RoomData) with its passages rewired: you
-## arrive through `entrance`, each exit leads on to the next step, and every other passage is
-## grown over. A module that lacks a passage gets one carved from the room's edge to the
-## nearest floor. Runs are forward-only: the way you came in stays shut behind you.
-## Everything random (modules, branch order, fights, rewards, altar and shop stock) comes from
-## the seed, so a seed replays the same run.
+## Each map is one connected island of areas built fresh by MapGen (personal pathing: walk
+## anywhere, no loading between areas): a start clearing, monster glades, a shop, an altar,
+## a lounge to rest in, hidden groves with loot, and a gate out. Four monsters sleep in the
+## glades; the gate opens once all four have fallen. The boss waits in its own arena, built
+## from a hand-made room module with its passages rewired (entrance carved, the rest grown over).
+## Everything random (layouts, monsters, stock, loot, altar choices) comes from the seed, so a
+## seed replays the same run.
 
-const COMBAT_MODULES := ["hollow", "mire", "ridge", "thornwood"]
-const MODULES := {
-	start = "yard", shop = "forge", event = "lounge", altar = "wayshrine", weapon = "overlook",
-	safe = "sanctum", elite = "barrow", boss = "arena",
-}
+const MAPS := 3
+const MAP_THEMES := ["moss", "thorn", "mire", "overlook", "way"]
+const THEME_NAMES := {moss = "Mosswood", thorn = "Thornwood", mire = "The Mire", overlook = "Overlook", way = "Wayside"}
+## the monsters each map draws its four from
+const MONSTER_POOLS := [
+	["chaser", "chaser", "spitter", "rammer"],
+	["chaser", "spitter", "rammer", "rammer", "spitter"],
+	["chaser", "spitter", "rammer", "brute"],
+]
+const MAP_TIERS := [1, 2, 2]
+const MAP_CHAMPS := [0, 0, 1]
+const CLEAR_ESSENCE := Vector2i(10, 16)
+const LOOT_ESSENCE := Vector2i(14, 22)
+const MODULES := {boss = "arena"}
 const KIND_NAMES := {
 	start = "Burrow", combat = "Combat", shop = "Shop", event = "Hidden Cache", altar = "Altar",
-	weapon = "Weapon Room", safe = "Safe Room", elite = "Elite", boss = "Boss",
+	weapon = "Weapon Room", safe = "Safe Room", elite = "Elite", boss = "Boss", wilds = "Map",
 }
 ## markers each kind of room keeps (the rest become floor)
 const KEEP := {start = "", combat = "R", shop = "W", event = "X", altar = "S", weapon = "RX", safe = "H", elite = "R", boss = ""}
@@ -26,10 +36,18 @@ const MARKERS := "SHWPLXR"
 const REWARD_NAMES := {essence = "Essence", weapon = "Weapon", heal = "Healing"}
 const PRICES := {weapon = 20, skill = 25, heal = 15}
 const HEAL_OFFER := 0.3
-const DOOR_X := {A = 1, D = 0, B = 2, C = 1}
-const LAYERS := 7
 const FLOOR := ".,*@"
 const CROSS := "Tt#~ .,*@"
+const KEEPERS := {
+	shop = ["Tallow the Trader", Color(0.95, 0.8, 0.55), [
+		"Essence buys anything here. Well. Anything on the table.",
+		"Four of them roam every wood. Put them down and the gate lets you on.",
+		"The overgrown trails? Somebody hid something at the end of every one."]],
+	lounge = ["Keeper Moss", Color(0.72, 0.95, 0.7), [
+		"Sit a while. The well mends you, once.",
+		"The map in the corner fills in as you walk. Wheel or , and . to zoom.",
+		"The King waits past the last gate. Don't go in hurt."]],
+}
 
 var seed_value := 0
 var rooms: Array[RoomData] = []
@@ -56,72 +74,92 @@ func index_of(id: String) -> int:
 # ---------------- generation ----------------
 
 func _generate() -> void:
-	var combat := COMBAT_MODULES.duplicate()
-	_shuffle(combat)
 	start_weapon = _roll_weapon()
-	var start := _node("start", MODULES.start, 0, 1)
-	var first := _node("combat", combat[0], 1, 1)
-	# the branch: one more fight, a place to spend, a place to grow
-	var options := ["combat", "shop" if _rng.chance(0.75) else "event", "altar" if _rng.chance(0.7) else "weapon"]
-	_shuffle(options)
-	var branch: Array[RoomData] = []
-	for k in options.size():
-		var kind: String = options[k]
-		branch.append(_node(kind, combat[1] if kind == "combat" else MODULES[kind], 2, 0))
-	var third := _node("combat", combat[2], 3, 1)
-	var safe := _node("safe", MODULES.safe, 4, 1)
-	var elite := _node("elite", MODULES.elite, 5, 1)
-	var boss := _node("boss", MODULES.boss, 6, 1)
-	_link(start, [first])
-	_link(first, branch)
-	for b in branch:
-		_link(b, [third])
-	_link(third, [safe])
-	_link(safe, [elite])
-	_link(elite, [boss])
+	var themes := MAP_THEMES.duplicate()
+	_shuffle(themes)
+	var maps: Array[RoomData] = []
+	for m in MAPS:
+		maps.append(_map(m, themes[m]))
+	var boss := _node("boss", MODULES.boss, MAPS, 1)
 	_link(boss, [])
+	for m in MAPS:
+		var next: RoomData = maps[m + 1] if m + 1 < MAPS else boss
+		maps[m].doors = {"A": [next.id, next.entrance]}
 
 
-## a room of this kind built from `module_id`, with its fight / stock rolled
+## a generated map: its island, its four monsters, its shop stock and altar choices
+func _map(m: int, theme_id: String) -> RoomData:
+	var r := RoomData.new()
+	r.id = "wilds_%d" % m
+	r.kind = "wilds"
+	r.map_no = m
+	r.layer = m
+	r.map_pos = Vector2i(0, MAPS - m)
+	r.name = THEME_NAMES.get(theme_id, "The Wilds")
+	r.blurb = "Map %d of %d. Four monsters roam these woods; the gate opens when they fall." % [m + 1, MAPS]
+	r.theme = load("res://data/themes/%s.tres" % theme_id)
+	var pool: Array = MONSTER_POOLS[mini(m, MONSTER_POOLS.size() - 1)]
+	var kinds := []
+	var brutes := 0
+	while kinds.size() < Tuning.MAP_MONSTERS:
+		var id: String = pool[_rng.pick(pool.size())]
+		if id == "brute":
+			if brutes > 0:
+				continue
+			brutes += 1
+		kinds.append(Content.enemy_index(id))
+	MapGen.generate(r, _rng, kinds, MAP_CHAMPS[mini(m, MAP_CHAMPS.size() - 1)])
+	r.champions = MAP_CHAMPS[mini(m, MAP_CHAMPS.size() - 1)]
+	var enc := EncounterData.new()
+	enc.preset = Content.mode("arena")
+	enc.tier = MAP_TIERS[mini(m, MAP_TIERS.size() - 1)]
+	enc.start_alive = 0
+	enc.budget = r.monsters.size()
+	r.encounter = enc
+	r.reward_kind = "essence"
+	r.essence = CLEAR_ESSENCE
+	r.choices = _roll_passives(3)
+	r.offers = [
+		{type = "weapon", ref = _roll_weapon(), price = PRICES.weapon, sold = false},
+		{type = "skill", ref = _roll_passives(1)[0], price = PRICES.skill, sold = false},
+		{type = "heal", ref = HEAL_OFFER, price = PRICES.heal, sold = false},
+	]
+	# the locals, in the order their markers read (row by row)
+	var npcs: Array[NpcData] = []
+	for y in r.layout.size():
+		var row: String = r.layout[y]
+		for x in row.length():
+			if row[x] != "P":
+				continue
+			var zi := r.zones[y][x]
+			var kind := "lounge"
+			if zi != " ":
+				kind = r.areas[zi.unicode_at(0) - 48].kind
+			var k: Array = KEEPERS.get(kind, KEEPERS.lounge)
+			var npc := NpcData.new()
+			npc.name = k[0]
+			npc.tint = k[1]
+			npc.lines = PackedStringArray(k[2])
+			npcs.append(npc)
+	r.npcs = npcs
+	rooms.append(r)
+	return r
+
+
+## the boss arena, built from its hand-made module with the King's fight rolled
 func _node(kind: String, module_id: String, layer: int, x: int) -> RoomData:
 	var src := Content.module(module_id)
 	var r := RoomData.new()
 	r.id = "%s_%d_%d" % [kind, layer, rooms.size()]
 	r.kind = kind
-	r.name = src.name.trim_prefix("The ") if kind == "combat" else (KIND_NAMES[kind] if kind != "boss" else src.name)
-	if kind == "elite":
-		r.name = "Elite · " + src.name.trim_prefix("The ")
+	r.name = src.name
 	r.blurb = src.blurb
 	r.theme = src.theme
 	r.layout = src.layout.duplicate()
-	r.map_pos = Vector2i(x, LAYERS - 1 - layer)
+	r.map_pos = Vector2i(x, 0)
 	r.layer = layer
 	_strip_markers(r, kind)
-	match kind:
-		"combat", "elite", "boss":
-			var tier := 1 if layer <= 2 else (2 if kind == "combat" else 3)
-			_roll_fight(r, kind, tier)
-			if kind == "combat":
-				r.reward_kind = ["essence", "weapon", "heal"][_rng.weighted([5, 3, 2])]
-				if layer == 1:
-					r.reward_kind = "essence" if _rng.chance(0.5) else "weapon"
-			elif kind == "elite":
-				r.reward_kind = "essence"
-				r.choices = _roll_passives(3)   # an altar rises when the elites fall
-			if r.reward_kind == "weapon":
-				r.drop_weapon = _roll_weapon()
-		"weapon":
-			r.drop_weapon = _roll_weapon()
-		"altar":
-			r.choices = _roll_passives(3)
-		"shop":
-			r.offers = [
-				{type = "weapon", ref = _roll_weapon(), price = PRICES.weapon, sold = false},
-				{type = "skill", ref = _roll_passives(1)[0], price = PRICES.skill, sold = false},
-				{type = "heal", ref = HEAL_OFFER, price = PRICES.heal, sold = false},
-			]
-		"event":
-			r.essence = Vector2i(14, 22)
+	_roll_fight(r, kind, 3)
 	rooms.append(r)
 	return r
 
@@ -202,10 +240,6 @@ func _link(r: RoomData, next: Array) -> void:
 			if not _carve(rows, id):
 				push_error("RunPlan: can't carve passage %s in %s" % [id, r.id])
 			exits.append(id)
-	# a branch lays its choices out the way their passages face
-	if next.size() > 1:
-		for k in next.size():
-			next[k].map_pos.x = DOOR_X[exits[k]]
 	for id in "ABCD":
 		if id != entrance and not exits.has(id):
 			_seal(rows, id)
@@ -340,6 +374,8 @@ static func _carve(rows: Array, id: String) -> bool:
 ## what a passage promises: "Combat · Weapon", "Shop", "Altar · choose a skill"
 static func describe(r: RoomData) -> String:
 	match r.kind:
+		"wilds":
+			return "Map %d · %s" % [r.map_no + 1, r.name]
 		"combat":
 			return "Combat · " + REWARD_NAMES.get(r.reward_kind, "Essence")
 		"elite":

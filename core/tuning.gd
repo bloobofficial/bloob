@@ -8,8 +8,8 @@ extends RefCounted
 # ---------------- engine ----------------
 const TICK_RATE := 60
 const CELL := 32                   ## grid cell size
-const GRID_W := 80                 ## max room width in cells
-const GRID_H := 50
+const GRID_W := 160                ## max room width in cells (generated maps are big)
+const GRID_H := 128
 const LEVEL_H := 48                ## one plateau level
 const STEP_UP := 20                ## max climb per cell (stairs are 12-unit steps)
 const VOID_H := -32768             ## no ground: off the island
@@ -90,6 +90,13 @@ const REWARD_RANGE := 44.0
 const DUPLICATE_SHARDS := 2
 const EXIT_TICKS := 18
 const ENTER_TICKS := 12
+
+# ---------------- generated maps (Patch 1: personal pathing) ----------------
+const MAP_MONSTERS := 4            ## monsters per map
+const COMBOS_TO_KILL := 2.0        ## a monster takes about this many full combos of the weapon in hand
+const WAKE_DIST := 250.0           ## a sleeping monster wakes when Bloob comes this close
+const PACK_DIST := 300.0           ## ...and wakes the others of its pack this close to it
+const REVEAL_R := 9                ## the minimap uncovers this many cells around Bloob
 
 # ---------------- resources & loot (content/progression.ts) ----------------
 enum Res { ICHOR, BONE, WISP, SHARD }

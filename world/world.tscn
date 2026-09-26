@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://world/world.gd" id="1_world"]
 [ext_resource type="Script" path="res://world/rooms/terrain_view.gd" id="2_terrain"]
@@ -7,9 +7,13 @@
 [ext_resource type="Script" path="res://systems/projectiles.gd" id="5_proj"]
 [ext_resource type="Script" path="res://effects/fx_layer.gd" id="6_fx"]
 [ext_resource type="Script" path="res://world/rooms/door_glow.gd" id="7_doors"]
+[ext_resource type="Script" path="res://world/rooms/backdrop.gd" id="8_backdrop"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_world")
+
+[node name="Backdrop" type="Node2D" parent="."]
+script = ExtResource("8_backdrop")
 
 [node name="Terrain" type="Node2D" parent="."]
 script = ExtResource("2_terrain")

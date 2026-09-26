@@ -57,6 +57,8 @@ var struck := false              ## this attack already connected
 var target := Vector2.ZERO       ## locked target point (leaps)
 var pattern_i := 0               ## bosses: the next attack in their cycle
 var enraged := false             ## bosses: below half health they press harder
+var dormant := false             ## generated maps: asleep in its glade until Bloob comes close
+var home := Vector2.ZERO         ## where a dormant monster strolls about
 var _nav := {}
 
 @onready var visual: EnemyVisual = $Visual
@@ -88,6 +90,8 @@ func setup(w: World, k: int, at: Vector2, pz: float) -> void:
 # ---------------- decisions ----------------
 
 func think() -> void:
+	if dormant:
+		return
 	var p := world.player
 	var dist := position.distance_to(p.position)
 	if state == St.STAGGER or state == St.WINDUP or state == St.LUNGE or state == St.RECOVER:
@@ -314,6 +318,9 @@ func move(s: float) -> void:
 		return   # global hitstop: nothing moves
 	if freeze > 0:
 		freeze -= 1   # local hitstop
+		return
+	if dormant:
+		_idle(s)
 		return
 	if flash > 0: flash -= 1
 	if atk_cd > 0: atk_cd -= 1
@@ -545,6 +552,30 @@ func move(s: float) -> void:
 			atk_cd = roundi(50.0 / world.diff.atk_rate)
 			if state == St.COMMIT and squad < 0:
 				state = St.APPROACH
+
+
+## asleep in its glade: amble to a spot near home, rest, amble again (never attacks)
+func _idle(s: float) -> void:
+	if flash > 0: flash -= 1
+	if age < 65535: age += 1
+	timer -= 1
+	if timer <= 0:
+		var rng := world.rng
+		if rng.chance(0.55):
+			target = home + Vector2(rng.rangef(-56, 56), rng.rangef(-40, 40))
+			timer = 90 + rng.pick(120)
+		else:
+			target = position
+			timer = 60 + rng.pick(120)
+	var d := target - position
+	var t := d.normalized() * minf(1.0, d.length() / 24.0) if d.length() > 4.0 else Vector2.ZERO
+	vel += (t * speed * 0.35 - vel) * (0.12 * s)
+	var res := _move_body(vel * s, z, false)
+	if res[0]:
+		target = position   # bumped into something: stop there
+	var g := world.map.ground_at(position.x, position.y)
+	if g != Tuning.VOID_H:
+		z = g
 
 
 ## move by `delta` world units at height z0. Returns [hit_anything, hit_solid].

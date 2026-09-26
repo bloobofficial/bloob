@@ -6,13 +6,14 @@ extends RefCounted
 ##
 ## Layout legend (one character = one 32-unit cell; ragged rows are padded with void):
 ##   ' ' void        '.' floor       ',' path        '#' stone wall / pillar
-##   'T' trees       't' bushes      '~' water       '1' plateau (48)   '2' high plateau (96)
+##   'T' trees       't' bushes      '~' water       'o' boulder
+##        '1' plateau (48)   '2' high plateau (96)
 ##   'a' 'b' 'c' stairs 12/24/36     'd' 'e' 'f' stairs 60/72/84
 ##   '@' player start   '*' '&' '%' monster spawn on floor / plateau / high plateau
 ##   'A'..'D' passage cells (A north, B east, C south, D west)
 ##   'S' Shrine  'H' Well  'W' weapon rack  'P' local  'L' notice board  'X' cache  'R' reward spot
 
-enum Mat { GROUND, STONE, TREE, BUSH, PATH, WATER, PROP }
+enum Mat { GROUND, STONE, TREE, BUSH, PATH, WATER, PROP, ROCK }
 
 const MARKERS := "SHWPLXR"
 const HEIGHTS := {
@@ -31,6 +32,10 @@ var height := PackedInt32Array()
 var wall := PackedByteArray()
 var mat := PackedByteArray()
 var door := PackedByteArray()   ## door letter code per cell (0 = none)
+## generated maps: which area each cell belongs to (area index + 1, 0 = none) and its floor
+## style ('.' natural, 'w' wood, 's' stone, 'r' rug, 'h' hidden trail), as char codes
+var zone := PackedByteArray()
+var style := PackedByteArray()
 var spawns: Array[Vector3] = []
 var start := Vector3.ZERO
 ## [{id, cells, cx, cy, in_x, in_y}] sorted by id
@@ -53,6 +58,17 @@ func load_room(def: RoomData) -> void:
 	wall = PackedByteArray(); wall.resize(n)
 	mat = PackedByteArray(); mat.resize(n)
 	door = PackedByteArray(); door.resize(n)
+	zone = PackedByteArray(); zone.resize(n)
+	style = PackedByteArray(); style.resize(n); style.fill(46)
+	for y in mini(h, def.zones.size()):
+		var zr: String = def.zones[y]
+		var sr: String = def.styles[y] if y < def.styles.size() else ""
+		for x in mini(w, zr.length()):
+			var zc := zr.unicode_at(x)
+			if zc != 32:
+				zone[y * w + x] = zc - 47
+			if x < sr.length():
+				style[y * w + x] = sr.unicode_at(x)
 	spawns.clear()
 	doors.clear()
 	markers.clear()
@@ -81,9 +97,9 @@ func load_room(def: RoomData) -> void:
 				mat[c] = Mat.STONE
 				height[c] = 0   # raised below, once the ground around it is known
 				continue
-			if ch == "T" or ch == "t" or ch == "~":
+			if ch == "T" or ch == "t" or ch == "~" or ch == "o":
 				wall[c] = 2
-				mat[c] = Mat.TREE if ch == "T" else (Mat.BUSH if ch == "t" else Mat.WATER)
+				mat[c] = Mat.TREE if ch == "T" else (Mat.BUSH if ch == "t" else (Mat.ROCK if ch == "o" else Mat.WATER))
 				height[c] = -10 if ch == "~" else 0
 				continue
 			if MARKERS.contains(ch):
@@ -197,6 +213,12 @@ func door_at(x: float, y: float) -> int:
 	return 0 if c < 0 else door[c]
 
 
+## the generated area a point lies in (index into RoomData.areas), or -1
+func area_at(x: float, y: float) -> int:
+	var c := cell_of(x, y)
+	return -1 if c < 0 else zone[c] - 1
+
+
 func door_info(id: String) -> Dictionary:
 	for d in doors:
 		if d.id == id:
@@ -302,7 +324,7 @@ func blocks_shot(x: float, y: float, z: float) -> bool:
 	if c < 0:
 		return false
 	var m := mat[c]
-	if m == Mat.TREE or m == Mat.PROP:
+	if m == Mat.TREE or m == Mat.PROP or m == Mat.ROCK:
 		return true
 	var hh := height[c]
 	return hh != Tuning.VOID_H and hh > z
@@ -340,19 +362,19 @@ func look_cell(cx: int, cy: int) -> Dictionary:
 	var c := sy * w + sx
 	var hh := height[c]
 	if out == 0:
-		return {h = hh, mat = mat[c], door = door[c] != 0, wall = wall[c], out = 0}
+		return {h = hh, mat = mat[c], door = door[c] != 0, wall = wall[c], out = 0, style = style[c]}
 	if hh == Tuning.VOID_H:
-		return {h = Tuning.VOID_H, mat = Mat.GROUND, door = false, wall = 0, out = out}
+		return {h = Tuning.VOID_H, mat = Mat.GROUND, door = false, wall = 0, out = out, style = 46}
 	if door[c] != 0:
 		# the passage continues as a path into the distance
-		return {h = hh, mat = Mat.PATH, door = true, wall = 0, out = out}
+		return {h = hh, mat = Mat.PATH, door = true, wall = 0, out = out, style = 46}
 	if wall[c] == 1:
-		return {h = hh, mat = Mat.STONE, door = false, wall = 1, out = out}
+		return {h = hh, mat = Mat.STONE, door = false, wall = 1, out = out, style = 46}
 	# open floor reaching the edge of a layout is an island's rim: the world falls away there
 	if wall[c] == 0:
-		return {h = Tuning.VOID_H, mat = Mat.GROUND, door = false, wall = 0, out = out}
+		return {h = Tuning.VOID_H, mat = Mat.GROUND, door = false, wall = 0, out = out, style = 46}
 	# trees, bushes and water become wild ground: bushes toward the camera (south), forest elsewhere
-	return {h = hh + 10 if mat[c] == Mat.WATER else hh, mat = Mat.BUSH if cy >= h else Mat.TREE, door = false, wall = 2, out = out}
+	return {h = hh + 10 if mat[c] == Mat.WATER else hh, mat = Mat.BUSH if cy >= h else Mat.TREE, door = false, wall = 2, out = out, style = 46}
 
 
 static func hash2(x: int, y: int) -> float:

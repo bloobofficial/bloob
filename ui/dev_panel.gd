@@ -160,7 +160,8 @@ func run(line: String) -> void:
 			world.player.place(at, world.map.ground_at(at.x, at.y))
 		"room":
 			if args.size() > 0:
-				world.load_room(world.room_index_of(args[0]), "C" if world.in_run() else "")
+				var ri := world.room_index_of(args[0])
+				world.load_room(ri, world.rooms[ri].entrance if world.in_run() else "")
 				main.snap_camera()
 		"rooms":
 			for i in world.rooms.size():

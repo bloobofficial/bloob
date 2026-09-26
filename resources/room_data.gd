@@ -34,3 +34,11 @@ var champions := 0
 var essence := Vector2i.ZERO          ## Essence spilled on clear
 var choices := PackedStringArray()    ## altar: passive ids on offer
 var offers: Array = []                ## shop: [{type, ref, price, sold}]
+# ---- generated maps only (MapGen: one connected island of areas per run stage) ----
+var map_no := 0                       ## which map of the run this is (0-based)
+## the areas of the map: [{kind, name, cell: Vector2i (middle), rect: Rect2i, idx}]
+var areas: Array = []
+var zones := PackedStringArray()      ## per cell: area index as chr(48 + i), ' ' outside any area
+var styles := PackedStringArray()     ## per cell floor style: '.' natural, 'w' wood, 's' stone, 'r' rug, 'h' hidden trail
+var monsters: Array = []              ## [{kind, cell: Vector2i, champ}]: the map's monsters, asleep where they lie
+var decor: Array = []                 ## [{type, cell: Vector2i}]: torches and braziers
